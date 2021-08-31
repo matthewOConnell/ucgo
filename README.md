@@ -1,2 +1,0 @@
-# Ucgo Mini App
-
