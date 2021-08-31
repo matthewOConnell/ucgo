@@ -107,7 +107,7 @@ int vul::Grid::count(vul::Grid::CellType type) const {
   }
   return 0;
 }
-void vul::Grid::print() const {
+void vul::Grid::printSummary() const {
   printf("Num Node    %d\n", points.extent_int(0));
   printf("Num Tri     %d\n", tris.extent_int(0));
   printf("Num Quad    %d\n", quads.extent_int(0));
@@ -125,6 +125,35 @@ void vul::Grid::print() const {
   for (int p = 0; p < first_few; p++) {
     printf("tri %d: %d %d %d\n", p, tris.h_view(p, 0), tris.h_view(p, 1),
            tris.h_view(p, 2));
+  }
+
+  first_few = std::min(3, quads.extent_int(0));
+  for (int p = 0; p < first_few; p++) {
+    printf("quad %d: %d %d %d %d\n", p, quads.h_view(p, 0), quads.h_view(p, 1),
+           quads.h_view(p, 2), quads.h_view(p, 3));
+  }
+
+  first_few = std::min(3, tets.extent_int(0));
+  for (int p = 0; p < first_few; p++) {
+    printf("tet %d: %d %d %d %d\n", p, tets.h_view(p, 0), tets.h_view(p, 1),
+           tets.h_view(p, 2), tets.h_view(p, 3));
+  }
+
+  first_few = std::min(3, pyramids.extent_int(0));
+  for (int p = 0; p < first_few; p++) {
+    printf("pyramid %d: %d %d %d %d %d\n", p, pyramids.h_view(p, 0), pyramids.h_view(p, 1),
+           pyramids.h_view(p, 2), pyramids.h_view(p, 3), pyramids.h_view(p, 4));
+  }
+
+  first_few = std::min(3, prisms.extent_int(0));
+  for (int p = 0; p < first_few; p++) {
+    printf("prism %d: %d %d %d %d %d %d\n", p, prisms.h_view(p, 0), prisms.h_view(p, 1),
+           prisms.h_view(p, 2), prisms.h_view(p, 3), prisms.h_view(p, 4), prisms.h_view(p, 5));
+  }
+  first_few = std::min(3, hexs.extent_int(0));
+  for (int p = 0; p < first_few; p++) {
+    printf("hex %d: %d %d %d %d %d %d %d %d\n", p, hexs.h_view(p, 0), hexs.h_view(p, 1),
+           hexs.h_view(p, 2), hexs.h_view(p, 3), hexs.h_view(p, 4), hexs.h_view(p, 5), hexs.h_view(p, 6), hexs.h_view(p, 7));
   }
 }
 

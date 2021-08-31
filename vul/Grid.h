@@ -19,7 +19,7 @@ class Grid {
 
     Vec2D<int> getCellArray(CellType type);
 
-    void print() const;
+    void printSummary() const;
   private:
     Vec2D<double> points;
     Vec2D<int> tris;
