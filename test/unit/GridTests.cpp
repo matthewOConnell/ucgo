@@ -12,5 +12,7 @@ TEST_CASE("First test"){
     REQUIRE(grid.count(vul::Grid::PYRAMID) == 0);
     REQUIRE(grid.count(vul::Grid::PRISM) == 3176);
     REQUIRE(grid.count(vul::Grid::HEX) == 16000);
+
+    grid.print();
 }
 

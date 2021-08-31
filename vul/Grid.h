@@ -6,25 +6,35 @@
 namespace vul {
 class Grid {
   public:
+    template <typename T>
+    using Vec1D = Kokkos::DualView<T*>;
+    template <typename T>
+    using Vec2D = Kokkos::DualView<T**>;
+
     enum CellType {TRI, QUAD, TET, PYRAMID, PRISM, HEX};
     Grid(std::string filename);
 
     int count(CellType type) const;
+    int typeLength(CellType type) const;
+
+    Vec2D<int> getCellArray(CellType type);
+
+    void print() const;
   private:
-    using Vec1D = Kokkos::DualView<double*>;
-    using Vec2D = Kokkos::DualView<double**>;
-    Vec2D points;
-    Vec2D tris;
-    Vec2D quads;
-    Vec2D tets;
-    Vec2D pyramids;
-    Vec2D prisms;
-    Vec2D hexs;
-    Vec1D tri_tags;
-    Vec1D quad_tags;
+    Vec2D<double> points;
+    Vec2D<int> tris;
+    Vec2D<int> quads;
+    Vec2D<int> tets;
+    Vec2D<int> pyramids;
+    Vec2D<int> prisms;
+    Vec2D<int> hexs;
+    Vec1D<int> tri_tags;
+    Vec1D<int> quad_tags;
 
     void readPoints(FILE* fp);
     void readCells(FILE* fp);
+    void readCells(FILE* fp, CellType type);
+    void readTags(FILE* fp, CellType type);
 
 };
 }
