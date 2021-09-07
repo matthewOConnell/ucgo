@@ -1,4 +1,5 @@
 #include "Grid.h"
+#include <set>
 
 #include "Macros.h"
 
@@ -27,7 +28,6 @@ vul::Grid::Grid(std::string filename) {
 
   readPoints(fp);
   readCells(fp);
-
   fclose(fp);
 }
 
@@ -101,6 +101,7 @@ int vul::Grid::count(vul::Grid::CellType type) const {
   case PYRAMID: return pyramids.extent_int(0);
   case PRISM: return prisms.extent_int(0);
   case HEX: return hexs.extent_int(0);
+  case FACE: return face_to_cell.extent_int(0);
   default:
     throw std::logic_error("Unknown type requested in count" +
                            std::to_string(type));
@@ -141,19 +142,23 @@ void vul::Grid::printSummary() const {
 
   first_few = std::min(3, pyramids.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("pyramid %d: %d %d %d %d %d\n", p, pyramids.h_view(p, 0), pyramids.h_view(p, 1),
-           pyramids.h_view(p, 2), pyramids.h_view(p, 3), pyramids.h_view(p, 4));
+    printf("pyramid %d: %d %d %d %d %d\n", p, pyramids.h_view(p, 0),
+           pyramids.h_view(p, 1), pyramids.h_view(p, 2), pyramids.h_view(p, 3),
+           pyramids.h_view(p, 4));
   }
 
   first_few = std::min(3, prisms.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("prism %d: %d %d %d %d %d %d\n", p, prisms.h_view(p, 0), prisms.h_view(p, 1),
-           prisms.h_view(p, 2), prisms.h_view(p, 3), prisms.h_view(p, 4), prisms.h_view(p, 5));
+    printf("prism %d: %d %d %d %d %d %d\n", p, prisms.h_view(p, 0),
+           prisms.h_view(p, 1), prisms.h_view(p, 2), prisms.h_view(p, 3),
+           prisms.h_view(p, 4), prisms.h_view(p, 5));
   }
   first_few = std::min(3, hexs.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("hex %d: %d %d %d %d %d %d %d %d\n", p, hexs.h_view(p, 0), hexs.h_view(p, 1),
-           hexs.h_view(p, 2), hexs.h_view(p, 3), hexs.h_view(p, 4), hexs.h_view(p, 5), hexs.h_view(p, 6), hexs.h_view(p, 7));
+    printf("hex %d: %d %d %d %d %d %d %d %d\n", p, hexs.h_view(p, 0),
+           hexs.h_view(p, 1), hexs.h_view(p, 2), hexs.h_view(p, 3),
+           hexs.h_view(p, 4), hexs.h_view(p, 5), hexs.h_view(p, 6),
+           hexs.h_view(p, 7));
   }
 }
 
@@ -184,3 +189,38 @@ int vul::Grid::typeLength(vul::Grid::CellType type) const {
                            std::to_string(type));
   }
 }
+int vul::Grid::cellLength(int cell_id) const {
+  return typeLength(cellType(cell_id));
+}
+vul::Grid::CellType vul::Grid::cellType(int cell_id) const {
+  auto pair = cellIdToTypeAndIndexPair(cell_id);
+  return pair.first;
+}
+std::pair<vul::Grid::CellType, int>
+vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
+  if (cell_id < numTets())
+    return {TET, cell_id};
+  cell_id -= numTets();
+  if (cell_id < numPyramids())
+    return {PYRAMID, cell_id};
+  cell_id -= numPyramids();
+  if (cell_id < numPrisms())
+    return {PRISM, cell_id};
+  cell_id -= numPrisms();
+  if (cell_id < numHexs())
+    return {HEX, cell_id};
+  cell_id -= numHexs();
+  if (cell_id < numTris())
+    return {TRI, cell_id};
+  cell_id -= numTris();
+  if (cell_id < numQuads())
+    return {QUAD, cell_id};
+  cell_id -= numQuads();
+  VUL_ASSERT(false, "Could not find type of cell_id" + std::to_string(cell_id));
+}
+int vul::Grid::numTets() const { return tets.extent_int(0); }
+int vul::Grid::numPyramids() const { return pyramids.extent_int(0); }
+int vul::Grid::numPrisms() const { return prisms.extent_int(0); }
+int vul::Grid::numHexs() const { return hexs.extent_int(0); }
+int vul::Grid::numTris() const { return tris.extent_int(0); }
+int vul::Grid::numQuads() const { return quads.extent_int(0); }
