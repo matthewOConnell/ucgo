@@ -42,7 +42,8 @@ TEST_CASE("Can build faces from a ugrid") {
   REQUIRE(grid.count(vul::PRISM) == 0);
   REQUIRE(grid.count(vul::HEX) == 100);
 
-  REQUIRE(grid.count(vul::FACE) == 402);
+  REQUIRE(grid.count(vul::FACE) == 501);
+  grid.printSummary();
 }
 
 TEST_CASE("vul::Cell exists") {

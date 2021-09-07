@@ -317,6 +317,19 @@ void vul::Grid::printSummary() const {
            hexs.h_view(p, 4), hexs.h_view(p, 5), hexs.h_view(p, 6),
            hexs.h_view(p, 7));
   }
+  first_few = std::min(3, int(cell_face_neighbors.size()));
+  for(int c = 0; c < first_few; c++){
+    printf("cell %d face neighbors: ", c);
+    for(auto n : cell_face_neighbors[c]){
+      printf("%d ", n);
+    }
+    printf("\n");
+  }
+
+  first_few = std::min(3, face_to_cell.extent_int(0));
+  for(int f = 0; f < first_few; f++){
+    printf("face %d %d\n", face_to_cell.h_view(f, 0), face_to_cell.h_view(f, 1));
+  }
 }
 
 vul::Grid::Vec2D<int> vul::Grid::getCellArray(vul::CellType type) {
@@ -399,6 +412,28 @@ std::vector<std::vector<int>> vul::Grid::buildFaceNeighbors() {
 void vul::Grid::buildFaces() {
   node_to_cell        = buildNodeToCell();
   cell_face_neighbors = buildFaceNeighbors();
+
+  // This math for num faces doesn't work in parallel if there are volume
+  // cells that don't have face neighbors on rank.
+  int num_faces = 6*numHexs() + 5*numPyramids() + 5*numPrisms() + 4*numTets() + numTris() + numQuads();
+  num_faces /= 2;
+  face_to_cell = FaceVector<int>("face_to_cell", num_faces);
+
+  int next_face = 0;
+  for(int c = 0; c < numCells(); c++){
+    for(int neighbor : cell_face_neighbors[c]){
+      if(c < neighbor) {
+        face_to_cell.h_view(next_face,0) = c;
+        face_to_cell.h_view(next_face,1) = neighbor;
+        next_face++;
+      }
+    }
+  }
+  Kokkos::deep_copy(face_to_cell.d_view, face_to_cell.h_view);
+}
+void vul::Grid::getCell(int cell_id, std::vector<int>& cell_nodes) const {
+  cell_nodes.resize(cellLength(cell_id));
+  getCell(cell_id, cell_nodes.data());
 }
 void vul::Grid::getCell(int cell_id, int *cell_nodes) const {
   auto [cell_type, cell_index] = cellIdToTypeAndIndexPair(cell_id);
@@ -454,7 +489,7 @@ std::vector<std::set<int>> vul::Grid::buildNodeToCell() {
   std::vector<int> cell_nodes;
   cell_nodes.reserve(8);
   for (int c = 0; c < numCells(); c++) {
-    getCell(c, cell_nodes.data());
+    getCell(c, cell_nodes);
     for (auto n : cell_nodes) {
       n2c[n].insert(c);
     }

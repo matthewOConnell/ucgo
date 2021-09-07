@@ -55,6 +55,7 @@ public:
   int numQuads() const;
 
   void getCell(int cell_id, int *cell_nodes) const;
+  void getCell(int cell_id, std::vector<int>& cell_nodes) const;
 
 private:
   Vec2D<double> points;
