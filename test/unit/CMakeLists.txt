@@ -2,7 +2,9 @@ add_subdirectory(doctest)
 
 
 set(test_sources
-        GridTests.cpp)
+        GridTests.cpp
+        PointTests.cpp
+        )
 
 add_executable(UnitTests UnitTestsMain.cpp ${test_sources})
 target_link_libraries(UnitTests PRIVATE vul::core doctest::doctest)

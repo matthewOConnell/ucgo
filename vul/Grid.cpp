@@ -1,4 +1,5 @@
 #include "Grid.h"
+#include "Point.h"
 #include <set>
 
 #include "Macros.h"
@@ -417,7 +418,8 @@ void vul::Grid::buildFaces() {
   // cells that don't have face neighbors on rank.
   int num_faces = 6*numHexs() + 5*numPyramids() + 5*numPrisms() + 4*numTets() + numTris() + numQuads();
   num_faces /= 2;
-  face_to_cell = FaceVector<int>("face_to_cell", num_faces);
+  face_to_cell = FaceToCells("face_to_cell", num_faces);
+  face_area = FaceArea("face_area", num_faces);
 
   int next_face = 0;
   for(int c = 0; c < numCells(); c++){
@@ -425,11 +427,16 @@ void vul::Grid::buildFaces() {
       if(c < neighbor) {
         face_to_cell.h_view(next_face,0) = c;
         face_to_cell.h_view(next_face,1) = neighbor;
+        Point<double> area;
+        face_area.h_view(next_face, 0) = area.x;
+        face_area.h_view(next_face, 1) = area.y;
+        face_area.h_view(next_face, 2) = area.z;
         next_face++;
       }
     }
   }
   Kokkos::deep_copy(face_to_cell.d_view, face_to_cell.h_view);
+  Kokkos::deep_copy(face_area.d_view, face_area.h_view);
 }
 void vul::Grid::getCell(int cell_id, std::vector<int>& cell_nodes) const {
   cell_nodes.resize(cellLength(cell_id));

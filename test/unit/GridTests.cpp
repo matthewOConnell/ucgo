@@ -43,8 +43,10 @@ TEST_CASE("Can build faces from a ugrid") {
   REQUIRE(grid.count(vul::HEX) == 100);
 
   REQUIRE(grid.count(vul::FACE) == 501);
+//  REQUIRE(grid.face_area.h_view(0,0) == 0.0);
   grid.printSummary();
 }
+
 
 TEST_CASE("vul::Cell exists") {
   std::string assets_dir = ASSETS_DIR;

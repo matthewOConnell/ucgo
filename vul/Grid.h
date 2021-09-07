@@ -28,8 +28,9 @@ class Grid {
 public:
   template <typename T> using Vec1D       = Kokkos::DualView<T *>;
   template <typename T> using Vec2D       = Kokkos::DualView<T **>;
-  template <typename T> using FaceVector  = Kokkos::DualView<T *[2]>;
   template <typename T> using PointVector = Kokkos::DualView<T *[3]>;
+  using FaceToCells = Kokkos::DualView<int *[2]>;
+  using FaceArea = Kokkos::DualView<double *[3]>;
 
   Grid(std::string filename);
 
@@ -58,8 +59,9 @@ public:
   void getCell(int cell_id, int *cell_nodes) const;
   void getCell(int cell_id, std::vector<int> &cell_nodes) const;
 
-private:
+public:
   PointVector<double> points;
+  FaceArea face_area;
   Vec2D<int> tris;
   Vec2D<int> quads;
   Vec2D<int> tets;
@@ -68,7 +70,7 @@ private:
   Vec2D<int> hexs;
   Vec1D<int> tri_tags;
   Vec1D<int> quad_tags;
-  FaceVector<int> face_to_cell;
+  FaceToCells face_to_cell;
 
   std::vector<std::vector<int>> cell_face_neighbors;
   std::vector<std::set<int>> node_to_cell;
