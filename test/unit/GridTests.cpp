@@ -82,7 +82,7 @@ TEST_CASE("vul::Cell exists") {
   REQUIRE(qua.face(0) == std::vector<int>{3, 2, 1, 0});
 }
 
-TEST_CASE("Can compute the area of a face"){
+TEST_CASE("Can compute grid metrics"){
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
   vul::Grid grid(filename);
@@ -92,4 +92,9 @@ TEST_CASE("Can compute the area of a face"){
   REQUIRE(face_area.x == 0);
   REQUIRE(face_area.y == -1.0);
   REQUIRE(face_area.z == 0);
+
+  REQUIRE(grid.cell_volume.h_view(0) == 1.0/24.0); // tet
+  REQUIRE(grid.cell_volume.h_view(1) == 1.0/6.0); // pyramid
+  REQUIRE(grid.cell_volume.h_view(2) == 0.1); // prism
+  REQUIRE(grid.cell_volume.h_view(3) == 1.0); // hex
 }

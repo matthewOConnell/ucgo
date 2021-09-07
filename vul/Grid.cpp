@@ -187,6 +187,8 @@ vul::Grid::Grid(std::string filename) {
   fclose(fp);
 
   buildFaces();
+  computeCellVolumes();
+
 }
 
 void vul::Grid::readPoints(FILE *fp) {
@@ -601,6 +603,132 @@ vul::Grid::calcFaceArea(const std::vector<int> &face_nodes) const {
   return area;
 
 }
+void vul::Grid::computeCellVolumes() {
+  int offset = 0;
+  cell_volume = Vec1D<double>("cell_volume", numCells());
+  for(int t = 0; t < numTets(); t++){
+    double vol = computeTetVolume(t);
+    cell_volume.h_view(t+offset) = vol;
+  }
+  offset += numTets();
+
+  for(int p = 0; p < numPyramids(); p++){
+    double vol = computePyramidVolume(p);
+    cell_volume.h_view(p+offset) = vol;
+  }
+  offset += numPyramids();
+  for(int p = 0; p < numPrisms(); p++){
+    double vol = computePrismVolume(p);
+    cell_volume.h_view(p+offset) = vol;
+  }
+  offset += numPrisms();
+  for(int p = 0; p < numHexs(); p++){
+    double vol = computeHexVolume(p);
+    cell_volume.h_view(p+offset) = vol;
+  }
+  offset += numHexs();
+  for(int p = 0; p < numTris(); p++){
+    cell_volume.h_view(p+offset) = 0.0;
+  }
+  offset += numTris();
+  for(int p = 0; p < numQuads(); p++){
+    cell_volume.h_view(p+offset) = 0.0;
+  }
+
+}
+vul::Point<double> vul::Grid::getPoint(int n) const {
+  return Point<double>{points.h_view(n, 0), points.h_view(n, 1),
+                         points.h_view(n, 2)};
+
+}
+double vul::Grid::computeTetVolume(int t) {
+  auto a = getPoint(tets.h_view(t, 0));
+  auto b = getPoint(tets.h_view(t, 1));
+  auto c = getPoint(tets.h_view(t, 2));
+  auto d = getPoint(tets.h_view(t, 3));
+  auto vol = computeTetVolume(a, b, c, d);
+  return vol;
+}
+double vul::Grid::computePyramidVolume(int p) {
+  auto a = getPoint(pyramids.h_view(p, 0));
+  auto b = getPoint(pyramids.h_view(p, 1));
+  auto c = getPoint(pyramids.h_view(p, 2));
+  auto d = getPoint(pyramids.h_view(p, 3));
+  auto e = getPoint(pyramids.h_view(p, 4));
+  auto z = (a + b + c + d) * 0.25;
+  auto vol = computeTetVolume(a, b, z, e);
+  vol += computeTetVolume(b, c, z, e);
+  vol += computeTetVolume(c, d, z, e);
+  vol += computeTetVolume(d, a, z, e);
+  return vol;
+}
+double vul::Grid::computePrismVolume(int p) {
+  auto a = getPoint(prisms.h_view(p, 0));
+  auto b = getPoint(prisms.h_view(p, 1));
+  auto c = getPoint(prisms.h_view(p, 2));
+  auto d = getPoint(prisms.h_view(p, 3));
+  auto e = getPoint(prisms.h_view(p, 4));
+  auto f = getPoint(prisms.h_view(p, 5));
+
+  auto centroid = (a + b + c + d + e + f) * (1.0/6.0);
+
+  double vol = computeTetVolume(a, b, c, centroid);
+  vol += computeTetVolume(b, e, c, centroid);
+  vol += computeTetVolume(c, e, f, centroid);
+
+  vol += computeTetVolume(c, f, a, centroid);
+  vol += computeTetVolume(a, f, d, centroid);
+
+  vol += computeTetVolume(a, d, b, centroid);
+  vol += computeTetVolume(d, e, b, centroid);
+
+  vol += computeTetVolume(d, f, e, centroid);
+  return vol;
+}
+double vul::Grid::computeHexVolume(int p) {
+  auto a = getPoint(hexs.h_view(p, 0));
+  auto b = getPoint(hexs.h_view(p, 1));
+  auto c = getPoint(hexs.h_view(p, 2));
+  auto d = getPoint(hexs.h_view(p, 3));
+  auto e = getPoint(hexs.h_view(p, 4));
+  auto f = getPoint(hexs.h_view(p, 5));
+  auto g = getPoint(hexs.h_view(p, 6));
+  auto h = getPoint(hexs.h_view(p, 7));
+  double vol = 0.0;
+
+  auto centroid = (a + b + c + d + e +f + g + h) * (1.0 / 8.0);
+
+  vol += computeTetVolume(a, b, d, centroid);
+  vol += computeTetVolume(b, c, d, centroid);
+
+  vol += computeTetVolume(a, e, b, centroid);
+  vol += computeTetVolume(e, f, b, centroid);
+
+  vol += computeTetVolume(b, f, c, centroid);
+  vol += computeTetVolume(c, f, g, centroid);
+
+  vol += computeTetVolume(d, g, h, centroid);
+  vol += computeTetVolume(d, c, g, centroid);
+
+  vol += computeTetVolume(d, h, e, centroid);
+  vol += computeTetVolume(d, e, a, centroid);
+
+  vol += computeTetVolume(e, h, f, centroid);
+  vol += computeTetVolume(f, h, g, centroid);
+
+  return vol;
+}
+double vul::Grid::computeTetVolume(const Point<double> &a,
+                                   const Point<double> &b,
+                                   const Point<double> &c,
+                                   const Point<double> &d) {
+
+  auto v1 = a - d;
+  auto v2 = b - d;
+  auto v3 = c - d;
+  auto v  = v2.cross(v3);
+  return -v1.dot(v) / 6.0;
+}
 std::vector<int> vul::Cell::face(int i) const {
   std::vector<int> face;
   switch (type()) {
@@ -628,6 +756,7 @@ int vul::Cell::numFaces() {
                           std::to_string(type()));
   }
 }
+
 vul::Cell::Cell(vul::CellType type, const int *nodes) : _type(type) {
   switch (type) {
   case TRI: cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2]}; return;

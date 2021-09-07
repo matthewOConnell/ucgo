@@ -1,7 +1,7 @@
 #pragma once
+#include "Point.h"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
-#include "Point.h"
 #include <set>
 #include <string>
 
@@ -28,8 +28,8 @@ public:
   template <typename T> using Vec1D       = Kokkos::DualView<T *>;
   template <typename T> using Vec2D       = Kokkos::DualView<T **>;
   template <typename T> using PointVector = Kokkos::DualView<T *[3]>;
-  using FaceToCells = Kokkos::DualView<int *[2]>;
-  using FaceArea = Kokkos::DualView<double *[3]>;
+  using FaceToCells                       = Kokkos::DualView<int *[2]>;
+  using FaceArea                          = Kokkos::DualView<double *[3]>;
 
   Grid(std::string filename);
 
@@ -42,6 +42,7 @@ public:
   Vec2D<int> getCellArray(CellType type);
 
   std::pair<CellType, int> cellIdToTypeAndIndexPair(int cell_id) const;
+  Point<double> getPoint(int node_id) const;
 
   void printSummary() const;
 
@@ -69,6 +70,7 @@ public:
   Vec2D<int> hexs;
   Vec1D<int> tri_tags;
   Vec1D<int> quad_tags;
+  Vec1D<double> cell_volume;
   FaceToCells face_to_cell;
 
   std::vector<std::vector<int>> cell_face_neighbors;
@@ -91,7 +93,14 @@ public:
                        const std::vector<int> &face_nodes);
   bool cellContainsFace(const std::vector<int> &neighbor_nodes,
                         const std::vector<int> &face_nodes);
-  Point<double> calcFaceArea(const std::vector<int>& face_nodes) const;
+  Point<double> calcFaceArea(const std::vector<int> &face_nodes) const;
+  void computeCellVolumes();
+  double computeTetVolume(const Point<double> &a, const Point<double> &b,
+                          const Point<double> &c, const Point<double> &d);
+  double computeTetVolume(int t);
+  double computePyramidVolume(int p);
+  double computePrismVolume(int p);
+  double computeHexVolume(int p);
 };
 
 } // namespace vul
