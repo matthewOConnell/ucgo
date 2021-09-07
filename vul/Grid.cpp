@@ -19,6 +19,7 @@ vul::Grid::Grid(std::string filename) {
   points   = Vec2D<double>("points", nnodes, 3);
   tris     = Vec2D<int>("tris", ntri, 3);
   quads    = Vec2D<int>("quads", nquad, 4);
+  tets     = Vec2D<int>("tets", ntet, 4);
   pyramids = Vec2D<int>("pyramids", npyramid, 5);
   prisms   = Vec2D<int>("prisms", nprism, 6);
   hexs     = Vec2D<int>("hexs", nhex, 8);
@@ -228,9 +229,7 @@ int vul::Grid::numHexs() const { return hexs.extent_int(0); }
 int vul::Grid::numTris() const { return tris.extent_int(0); }
 int vul::Grid::numQuads() const { return quads.extent_int(0); }
 
-void vul::Grid::buildFaces() {
-  auto n2c = buildNodeToCell();
-}
+void vul::Grid::buildFaces() { auto n2c = buildNodeToCell(); }
 void vul::Grid::getCell(int cell_id, int *cell_nodes) const {
   auto [cell_type, cell_index] = cellIdToTypeAndIndexPair(cell_id);
   switch (cell_type) {
