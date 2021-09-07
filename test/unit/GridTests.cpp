@@ -81,3 +81,15 @@ TEST_CASE("vul::Cell exists") {
   REQUIRE(tri.face(0) == std::vector<int>{4, 1, 8});
   REQUIRE(qua.face(0) == std::vector<int>{3, 2, 1, 0});
 }
+
+TEST_CASE("Can compute the area of a face"){
+  std::string assets_dir = ASSETS_DIR;
+  std::string filename   = assets_dir + "/13-node.lb8.ugrid";
+  vul::Grid grid(filename);
+
+  std::vector<int> face_nodes = {0, 3, 2, 1};
+  auto face_area = grid.calcFaceArea(face_nodes);
+  REQUIRE(face_area.x == 0);
+  REQUIRE(face_area.y == -1.0);
+  REQUIRE(face_area.z == 0);
+}
