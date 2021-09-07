@@ -223,7 +223,7 @@ void vul::Grid::readCells(FILE *fp, CellType type) {
   fread(buffer.data(), buffer.size(), sizeof(int), fp);
   for (int c = 0; c < ncells; c++) {
     for (int i = 0; i < length; i++) {
-      cells.h_view(c, i) = buffer[length * c + i]-1;
+      cells.h_view(c, i) = buffer[length * c + i] - 1;
     }
     if (type == PYRAMID) {
       //--- swap from AFLR to CGNS winding
@@ -383,7 +383,23 @@ int vul::Grid::numHexs() const { return hexs.extent_int(0); }
 int vul::Grid::numTris() const { return tris.extent_int(0); }
 int vul::Grid::numQuads() const { return quads.extent_int(0); }
 
-void vul::Grid::buildFaces() { auto n2c = buildNodeToCell(); }
+std::vector<std::vector<int>> vul::Grid::buildFaceNeighbors() {
+  std::vector<std::vector<int>> neighbors(numCells());
+  std::vector<int> cell;
+  for (int cell_id = 0; cell_id < numCells(); cell_id++) {
+    auto type = cellType(cell_id);
+    cell.resize(cellLength(cell_id));
+    getCell(cell_id, cell.data());
+    auto candidates    = getNodeNeighborsOfCell(cell, cell_id);
+    neighbors[cell_id] = getFaceNeighbors(type, cell, candidates);
+  }
+  return neighbors;
+}
+
+void vul::Grid::buildFaces() {
+  node_to_cell        = buildNodeToCell();
+  cell_face_neighbors = buildFaceNeighbors();
+}
 void vul::Grid::getCell(int cell_id, int *cell_nodes) const {
   auto [cell_type, cell_index] = cellIdToTypeAndIndexPair(cell_id);
   switch (cell_type) {
@@ -452,6 +468,69 @@ vul::Cell vul::Grid::cell(int cell_id) const {
   getCell(cell_id, cell_nodes.data());
   return vul::Cell(type, cell_nodes);
 }
+template <class Container, class T>
+inline bool isIn(const Container &container, T t) {
+  for (auto u : container) {
+    if (t == u)
+      return true;
+  }
+  return false;
+}
+std::vector<int>
+vul::Grid::getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
+                                  int cell_id) {
+  // This is convoluted for better performance, The original implementation used
+  // std::set, which was ~4x slower.
+  int neighbor_count = 0;
+  for (int node : cell_nodes) {
+    neighbor_count += node_to_cell.at(node).size();
+  }
+
+  std::vector<int> neighbors;
+  neighbors.reserve(neighbor_count);
+  for (int node : cell_nodes) {
+    for (int c : node_to_cell[node]) {
+      if (c != cell_id and not isIn(neighbors, c)) {
+        neighbors.push_back(c);
+      }
+    }
+  }
+  neighbors.shrink_to_fit();
+  return neighbors;
+}
+std::vector<int>
+vul::Grid::getFaceNeighbors(vul::CellType type,
+                            const std::vector<int> &cell_nodes,
+                            const std::vector<int> &candidates) {
+
+  Cell cell(type, cell_nodes);
+  std::vector<int> cell_neighbors;
+  for (int f = 0; f < cell.numFaces(); f++) {
+    auto face         = cell.face(f);
+    int face_neighbor = findFaceNeighbor(candidates, face);
+    cell_neighbors.push_back(face_neighbor);
+  }
+  return cell_neighbors;
+}
+int vul::Grid::findFaceNeighbor(const std::vector<int> &candidates,
+                                const std::vector<int> &face_nodes) {
+  std::vector<int> neighbor;
+
+  for (auto neighbor_id : candidates) {
+    neighbor.resize(cellLength(neighbor_id));
+    getCell(neighbor_id, neighbor.data());
+    if (cellContainsFace(neighbor, face_nodes))
+      return neighbor_id;
+  }
+  return -1;
+}
+bool vul::Grid::cellContainsFace(const std::vector<int> &cell,
+                                 const std::vector<int> &face_nodes) {
+  for (auto &id : face_nodes)
+    if (std::find(cell.begin(), cell.end(), id) == cell.end())
+      return false;
+  return true;
+}
 std::vector<int> vul::Cell::face(int i) const {
   std::vector<int> face;
   switch (type()) {
@@ -461,7 +540,9 @@ std::vector<int> vul::Cell::face(int i) const {
   case HEX: getHexFace(cell_nodes, i, face); return face;
   case TRI: return cell_nodes;
   case QUAD: return cell_nodes;
-  default: VUL_ASSERT(false, "Could not find face for cell type " + std::to_string(type()));
+  default:
+    VUL_ASSERT(false,
+               "Could not find face for cell type " + std::to_string(type()));
   }
 }
 int vul::Cell::numFaces() {
@@ -472,14 +553,14 @@ int vul::Cell::numFaces() {
   case HEX: return 6;
   case TRI: return 1;
   case QUAD: return 1;
-  default: VUL_ASSERT(false, "Num faces not known for unknown type: " + std::to_string(type()));
+  default:
+    VUL_ASSERT(false, "Num faces not known for unknown type: " +
+                          std::to_string(type()));
   }
 }
 vul::Cell::Cell(vul::CellType type, const int *nodes) : _type(type) {
   switch (type) {
-  case TRI:
-    cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2]};
-    return;
+  case TRI: cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2]}; return;
   case QUAD:
     cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2], nodes[3]};
     return;

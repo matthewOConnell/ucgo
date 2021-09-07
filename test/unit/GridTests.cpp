@@ -1,5 +1,5 @@
-#include <doctest.h>
 #include <VectorStringMaker.h>
+#include <doctest.h>
 #include <string>
 #include <vul/Grid.h>
 
@@ -42,7 +42,7 @@ TEST_CASE("Can build faces from a ugrid") {
   REQUIRE(grid.count(vul::PRISM) == 0);
   REQUIRE(grid.count(vul::HEX) == 100);
 
-  //  REQUIRE(grid.count(vul::Grid::FACE) == 402);
+  REQUIRE(grid.count(vul::FACE) == 402);
 }
 
 TEST_CASE("vul::Cell exists") {

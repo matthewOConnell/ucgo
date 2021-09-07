@@ -68,13 +68,26 @@ private:
   Vec1D<int> quad_tags;
   FaceVector<int> face_to_cell;
 
+  std::vector<std::vector<int>> cell_face_neighbors;
+  std::vector<std::set<int>> node_to_cell;
+
   void readPoints(FILE *fp);
   void readCells(FILE *fp);
   void readCells(FILE *fp, CellType type);
   void readTags(FILE *fp, CellType type);
   void buildFaces();
+  std::vector<std::vector<int>> buildFaceNeighbors();
 
   std::vector<std::set<int>> buildNodeToCell();
+  std::vector<int> getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
+                                          int cell_id);
+  std::vector<int> getFaceNeighbors(CellType type,
+                                     const std::vector<int> &cell_nodes,
+                                     const std::vector<int> &candidates);
+  int findFaceNeighbor(const std::vector<int> &candidates,
+                       const std::vector<int> &face_nodes);
+  bool cellContainsFace(const std::vector<int> &neighbor_nodes,
+                        const std::vector<int> &face_nodes);
 };
 
 } // namespace vul
