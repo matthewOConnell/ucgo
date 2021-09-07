@@ -1,8 +1,7 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "modernize-use-nodiscard"
 #pragma once
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
+#include "Point.h"
 #include <set>
 #include <string>
 
@@ -92,8 +91,7 @@ public:
                        const std::vector<int> &face_nodes);
   bool cellContainsFace(const std::vector<int> &neighbor_nodes,
                         const std::vector<int> &face_nodes);
+  Point<double> calcFaceArea(const std::vector<int>& face_nodes) const;
 };
 
 } // namespace vul
-
-#pragma clang diagnostic pop

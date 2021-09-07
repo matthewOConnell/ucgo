@@ -573,6 +573,34 @@ bool vul::Grid::cellContainsFace(const std::vector<int> &cell,
       return false;
   return true;
 }
+vul::Point<double>
+vul::Grid::calcFaceArea(const std::vector<int> &face_nodes) const {
+  std::array<Point<double>, 4> face_points;
+  bool is_quad = face_nodes.size() == 4;
+  for(int i = 0; i < 4; i++){
+    if(not is_quad) break; // break out for triangles;
+    int n = face_nodes[i];
+    Point<double> p;
+    p.x = points.h_view(n, 0);
+    p.y = points.h_view(n, 1);
+    p.z = points.h_view(n, 2);
+    face_points[i] = p;
+  }
+
+  Point<double> u = face_points[1] - face_points[0];
+  Point<double> v = face_points[2] - face_points[0];
+
+  Point<double> area = u.cross(v) * 0.5;
+
+  if(is_quad){
+    u = face_points[0] - face_points[3];
+    v = face_points[2] - face_points[3];
+    area = area + u.cross(v)*0.5;
+  }
+
+  return area;
+
+}
 std::vector<int> vul::Cell::face(int i) const {
   std::vector<int> face;
   switch (type()) {

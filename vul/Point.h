@@ -25,6 +25,16 @@ public:
   Point<T> cross(const Point<T>& b){
     return Point<T>(y * b.z - b.y*z, b.x * z - x * b.z, x * b.y - b.x * y);
   }
+
+  Point<T> operator-(const Point<T>& r){
+    return Point<T>{x - r.x, y - r.y, z - r.z};
+  }
+  Point<T> operator+(const Point<T>& r){
+    return Point<T>{x + r.x, y + r.y, z + r.z};
+  }
+  Point<T> operator*(const T& t) const {
+    return Point<T>{x*t, y*t, z*t};
+  }
 public:
   union {
     struct {T x, y, z; };
