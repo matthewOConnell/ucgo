@@ -96,7 +96,7 @@ void vul::Grid::readCells(FILE *fp) {
   readCells(fp, HEX);
 }
 
-int vul::Grid::count(vul::Grid::CellType type) const {
+int vul::Grid::count(vul::CellType type) const {
   switch (type) {
   case TRI: return tris.extent_int(0);
   case QUAD: return quads.extent_int(0);
@@ -165,7 +165,7 @@ void vul::Grid::printSummary() const {
   }
 }
 
-vul::Grid::Vec2D<int> vul::Grid::getCellArray(vul::Grid::CellType type) {
+vul::Grid::Vec2D<int> vul::Grid::getCellArray(vul::CellType type) {
   switch (type) {
   case TRI: return tris;
   case QUAD: return quads;
@@ -179,7 +179,7 @@ vul::Grid::Vec2D<int> vul::Grid::getCellArray(vul::Grid::CellType type) {
   }
 }
 
-int vul::Grid::typeLength(vul::Grid::CellType type) {
+int vul::Grid::typeLength(vul::CellType type) {
   switch (type) {
   case TRI: return 3;
   case QUAD: return 4;
@@ -195,11 +195,11 @@ int vul::Grid::typeLength(vul::Grid::CellType type) {
 int vul::Grid::cellLength(int cell_id) const {
   return typeLength(cellType(cell_id));
 }
-vul::Grid::CellType vul::Grid::cellType(int cell_id) const {
+vul::CellType vul::Grid::cellType(int cell_id) const {
   auto pair = cellIdToTypeAndIndexPair(cell_id);
   return pair.first;
 }
-std::pair<vul::Grid::CellType, int>
+std::pair<vul::CellType, int>
 vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
   if (cell_id < numTets())
     return {TET, cell_id};
@@ -290,4 +290,11 @@ std::vector<std::set<int>> vul::Grid::buildNodeToCell() {
     }
   }
   return n2c;
+}
+vul::Cell vul::Grid::cell(int cell_id) const {
+  auto [type, index] = cellIdToTypeAndIndexPair(cell_id);
+  auto length = typeLength(type);
+  std::vector<int> cell_nodes(length);
+  getCell(cell_id, cell_nodes.data());
+  return vul::Cell(type, cell_nodes);
 }
