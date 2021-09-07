@@ -1,4 +1,5 @@
 #include <doctest.h>
+#include <VectorStringMaker.h>
 #include <string>
 #include <vul/Grid.h>
 
@@ -17,7 +18,7 @@ TEST_CASE("Can read primal data from a ugrid") {
   REQUIRE(grid.cellType(3176) == vul::HEX);
 }
 
-TEST_CASE("Can get faces of each celll type"){
+TEST_CASE("Can get faces of each celll type") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
   vul::Grid grid(filename);
@@ -41,26 +42,39 @@ TEST_CASE("Can build faces from a ugrid") {
   REQUIRE(grid.count(vul::PRISM) == 0);
   REQUIRE(grid.count(vul::HEX) == 100);
 
-//  REQUIRE(grid.count(vul::Grid::FACE) == 402);
+  //  REQUIRE(grid.count(vul::Grid::FACE) == 402);
 }
 
-TEST_CASE("vul::Cell exists"){
+TEST_CASE("vul::Cell exists") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
   vul::Grid grid(filename);
 
   vul::Cell cell = grid.cell(0);
-  REQUIRE(grid.cell(0).type() == vul::TET);
-  REQUIRE(grid.cell(1).type() == vul::PYRAMID);
-  REQUIRE(grid.cell(2).type() == vul::PRISM);
-  REQUIRE(grid.cell(3).type() == vul::HEX);
-  REQUIRE(grid.cell(4).type() == vul::TRI);
-  REQUIRE(grid.cell(10).type() == vul::QUAD);
+  auto tet       = grid.cell(0);
+  auto pyr       = grid.cell(1);
+  auto pri       = grid.cell(2);
+  auto hex       = grid.cell(3);
+  auto tri       = grid.cell(4);
+  auto qua       = grid.cell(10);
+  REQUIRE(tet.type() == vul::TET);
+  REQUIRE(pyr.type() == vul::PYRAMID);
+  REQUIRE(pri.type() == vul::PRISM);
+  REQUIRE(hex.type() == vul::HEX);
+  REQUIRE(tri.type() == vul::TRI);
+  REQUIRE(qua.type() == vul::QUAD);
 
-  REQUIRE(grid.cell(0) .numFaces() == 4);
-  REQUIRE(grid.cell(1) .numFaces() == 5);
-  REQUIRE(grid.cell(2) .numFaces() == 5);
-  REQUIRE(grid.cell(3) .numFaces() == 6);
-  REQUIRE(grid.cell(4) .numFaces() == 1);
-  REQUIRE(grid.cell(10).numFaces() == 1);
+  REQUIRE(tet.numFaces() == 4);
+  REQUIRE(pyr.numFaces() == 5);
+  REQUIRE(pri.numFaces() == 5);
+  REQUIRE(hex.numFaces() == 6);
+  REQUIRE(tri.numFaces() == 1);
+  REQUIRE(qua.numFaces() == 1);
+
+  REQUIRE(tet.face(0) == std::vector<int>{1, 4, 12});
+  REQUIRE(pyr.face(0) == std::vector<int>{1, 4, 5, 2});
+  REQUIRE(pri.face(0) == std::vector<int>{1, 2, 11, 10});
+  REQUIRE(hex.face(0) == std::vector<int>{0, 3, 2, 1});
+  REQUIRE(tri.face(0) == std::vector<int>{4, 1, 8});
+  REQUIRE(qua.face(0) == std::vector<int>{3, 2, 1, 0});
 }

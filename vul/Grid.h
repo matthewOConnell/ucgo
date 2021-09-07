@@ -10,47 +10,15 @@ namespace vul {
 enum CellType { TRI, QUAD, TET, PYRAMID, PRISM, HEX, FACE };
 class Cell {
 public:
-  inline Cell(CellType type, const std::vector<int> &nodes)
-      : _type(type), cell_nodes(nodes) {}
-  inline Cell(CellType type, const int *nodes) : _type(type) {
-    switch (type) {
-    case TRI:
-      cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2]};
-      return;
-    case QUAD:
-      cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2], nodes[3]};
-      return;
-    case TET:
-      cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2], nodes[3]};
-      return;
-    case PYRAMID:
-      cell_nodes =
-          std::vector<int>{nodes[0], nodes[1], nodes[2], nodes[3], nodes[4]};
-      return;
-    case PRISM:
-      cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2],
-                                    nodes[3], nodes[4], nodes[5]};
-      return;
-    case HEX:
-      cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2], nodes[3],
-                                    nodes[4], nodes[5], nodes[6], nodes[7]};
-      return;
-    }
-  }
+  Cell(CellType type, const std::vector<int> &nodes);
+  Cell(CellType type, const int *nodes);
   CellType type() const { return _type; }
   int numNodes() const { return int(cell_nodes.size()); }
   int node(int n) const { return cell_nodes[n]; }
 
-  int numFaces() {
-    switch (type()) {
-    case TET: return 4;
-    case PYRAMID: return 5;
-    case PRISM: return 5;
-    case HEX: return 6;
-    case TRI: return 1;
-    case QUAD: return 1;
-    }
-  }
+  int numFaces();
+
+  std::vector<int> face(int i) const;
 
 private:
   CellType _type;
