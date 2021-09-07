@@ -28,7 +28,6 @@ TEST_CASE("Can build faces from a ugrid") {
   REQUIRE(grid.count(vul::Grid::PRISM) == 0);
   REQUIRE(grid.count(vul::Grid::HEX) == 100);
 
-  //  REQUIRE(grid.count(vul::Grid::FACE) == 402);
+  REQUIRE(grid.count(vul::Grid::FACE) == 402);
 
-  grid.printSummary();
 }

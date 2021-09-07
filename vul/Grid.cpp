@@ -29,6 +29,8 @@ vul::Grid::Grid(std::string filename) {
   readPoints(fp);
   readCells(fp);
   fclose(fp);
+
+  buildFaces();
 }
 
 void vul::Grid::readPoints(FILE *fp) {
@@ -176,7 +178,7 @@ vul::Grid::Vec2D<int> vul::Grid::getCellArray(vul::Grid::CellType type) {
   }
 }
 
-int vul::Grid::typeLength(vul::Grid::CellType type) const {
+int vul::Grid::typeLength(vul::Grid::CellType type) {
   switch (type) {
   case TRI: return 3;
   case QUAD: return 4;
@@ -218,9 +220,75 @@ vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
   cell_id -= numQuads();
   VUL_ASSERT(false, "Could not find type of cell_id" + std::to_string(cell_id));
 }
+int vul::Grid::numPoints() const { return points.extent_int(0); }
 int vul::Grid::numTets() const { return tets.extent_int(0); }
 int vul::Grid::numPyramids() const { return pyramids.extent_int(0); }
 int vul::Grid::numPrisms() const { return prisms.extent_int(0); }
 int vul::Grid::numHexs() const { return hexs.extent_int(0); }
 int vul::Grid::numTris() const { return tris.extent_int(0); }
 int vul::Grid::numQuads() const { return quads.extent_int(0); }
+
+void vul::Grid::buildFaces() {
+  auto n2c = buildNodeToCell();
+}
+void vul::Grid::getCell(int cell_id, int *cell_nodes) const {
+  auto [cell_type, cell_index] = cellIdToTypeAndIndexPair(cell_id);
+  switch (cell_type) {
+  case TET: {
+    for (int i = 0; i < 4; i++) {
+      cell_nodes[i] = tets.h_view(cell_index, i);
+    }
+    return;
+  }
+  case PYRAMID: {
+    for (int i = 0; i < 5; i++) {
+      cell_nodes[i] = pyramids.h_view(cell_index, i);
+    }
+    return;
+  }
+  case PRISM: {
+    for (int i = 0; i < 6; i++) {
+      cell_nodes[i] = prisms.h_view(cell_index, i);
+    }
+    return;
+  }
+  case HEX: {
+    for (int i = 0; i < 8; i++) {
+      cell_nodes[i] = hexs.h_view(cell_index, i);
+    }
+    return;
+  }
+  case TRI: {
+    for (int i = 0; i < 3; i++) {
+      cell_nodes[i] = tris.h_view(cell_index, i);
+    }
+    return;
+  }
+  case QUAD: {
+    for (int i = 0; i < 4; i++) {
+      cell_nodes[i] = quads.h_view(cell_index, i);
+    }
+    return;
+  }
+  }
+  VUL_ASSERT(false, "Could not match cell type: " + std::to_string(cell_type));
+}
+int vul::Grid::numCells() const {
+  return numTets() + numPyramids() + numPrisms() + numHexs() + numTris() +
+         numQuads();
+}
+int vul::Grid::numVolumeCells() const {
+  return numTets() + numPyramids() + numPrisms() + numHexs();
+}
+std::vector<std::set<int>> vul::Grid::buildNodeToCell() {
+  std::vector<std::set<int>> n2c(numPoints());
+  std::vector<int> cell_nodes;
+  cell_nodes.reserve(8);
+  for (int c = 0; c < numCells(); c++) {
+    getCell(c, cell_nodes.data());
+    for (auto n : cell_nodes) {
+      n2c[n].insert(c);
+    }
+  }
+  return n2c;
+}

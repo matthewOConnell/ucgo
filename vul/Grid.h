@@ -1,7 +1,10 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "modernize-use-nodiscard"
 #pragma once
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <string>
+#include <set>
 
 namespace vul {
 class Grid {
@@ -14,7 +17,7 @@ public:
   Grid(std::string filename);
 
   int count(CellType type) const;
-  int typeLength(CellType type) const;
+  static int typeLength(CellType type) ;
   int cellLength(int cell_id) const;
   CellType cellType(int cell_id) const;
 
@@ -24,12 +27,17 @@ public:
 
   void printSummary() const;
 
+  int numCells() const;
+  int numVolumeCells() const;
+  int numPoints() const;
   int numTets() const;
   int numPyramids() const;
   int numPrisms() const;
   int numHexs() const;
   int numTris() const;
   int numQuads() const;
+
+  void getCell(int cell_id, int* cell_nodes) const;
 
 
 private:
@@ -48,5 +56,10 @@ private:
   void readCells(FILE *fp);
   void readCells(FILE *fp, CellType type);
   void readTags(FILE *fp, CellType type);
+  void buildFaces();
+
+  std::vector<std::set<int>> buildNodeToCell();
 };
 } // namespace vul
+
+#pragma clang diagnostic pop
