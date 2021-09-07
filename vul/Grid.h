@@ -26,9 +26,10 @@ private:
 };
 class Grid {
 public:
-  template <typename T> using Vec1D      = Kokkos::DualView<T *>;
-  template <typename T> using Vec2D      = Kokkos::DualView<T **>;
-  template <typename T> using FaceVector = Kokkos::DualView<T *[2]>;
+  template <typename T> using Vec1D       = Kokkos::DualView<T *>;
+  template <typename T> using Vec2D       = Kokkos::DualView<T **>;
+  template <typename T> using FaceVector  = Kokkos::DualView<T *[2]>;
+  template <typename T> using PointVector = Kokkos::DualView<T *[3]>;
 
   Grid(std::string filename);
 
@@ -55,10 +56,10 @@ public:
   int numQuads() const;
 
   void getCell(int cell_id, int *cell_nodes) const;
-  void getCell(int cell_id, std::vector<int>& cell_nodes) const;
+  void getCell(int cell_id, std::vector<int> &cell_nodes) const;
 
 private:
-  Vec2D<double> points;
+  PointVector<double> points;
   Vec2D<int> tris;
   Vec2D<int> quads;
   Vec2D<int> tets;
@@ -83,8 +84,8 @@ private:
   std::vector<int> getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
                                           int cell_id);
   std::vector<int> getFaceNeighbors(CellType type,
-                                     const std::vector<int> &cell_nodes,
-                                     const std::vector<int> &candidates);
+                                    const std::vector<int> &cell_nodes,
+                                    const std::vector<int> &candidates);
   int findFaceNeighbor(const std::vector<int> &candidates,
                        const std::vector<int> &face_nodes);
   bool cellContainsFace(const std::vector<int> &neighbor_nodes,

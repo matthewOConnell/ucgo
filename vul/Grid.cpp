@@ -170,7 +170,7 @@ vul::Grid::Grid(std::string filename) {
   fread(&nprism, sizeof(int), 1, fp);
   fread(&nhex, sizeof(int), 1, fp);
 
-  points   = Vec2D<double>("points", nnodes, 3);
+  points   = PointVector<double>("points", nnodes);
   tris     = Vec2D<int>("tris", ntri, 3);
   quads    = Vec2D<int>("quads", nquad, 4);
   tets     = Vec2D<int>("tets", ntet, 4);
