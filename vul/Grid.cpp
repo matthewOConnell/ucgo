@@ -433,7 +433,7 @@ void vul::Grid::buildFaces() {
     for (int face_number = 0; face_number < num_faces; face_number++) {
       int neighbor       = cell_face_neighbors[c][face_number];
       auto [type, index] = cellIdToTypeAndIndexPair(c);
-      cell_nodes.resize(cellLength(c));
+      getCell(c, cell_nodes);
       Cell cell(type, cell_nodes);
       if (c < neighbor) {
         face_to_cell.h_view(next_face, 0) = c;
@@ -589,7 +589,7 @@ vul::Grid::calcFaceArea(const std::vector<int> &face_nodes) const {
   std::array<Point<double>, 4> face_points;
   bool is_quad = face_nodes.size() == 4;
   for (int i = 0; i < 4; i++) {
-    if (not is_quad)
+    if (i == 3 and not is_quad)
       break; // break out for triangles;
     int n = face_nodes[i];
     Point<double> p;

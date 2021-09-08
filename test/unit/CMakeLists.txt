@@ -4,6 +4,8 @@ add_subdirectory(doctest)
 set(test_sources
         ArrayTests.cpp
         GridTests.cpp
+        GasVariableTests.cpp
+        LDFSSFluxTests.cpp
         PointTests.cpp
         )
 

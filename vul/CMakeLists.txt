@@ -5,6 +5,8 @@ set(headers
         Macros.h
         Grid.h
         Residual.h
+        PerfectGas.h
+        PhysicalFlux.h
         Solution.h
         Vulcan.h
         )

@@ -1,4 +1,5 @@
 #pragma once
+#include <math.h>
 
 namespace vul {
 template <typename T>
