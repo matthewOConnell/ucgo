@@ -17,7 +17,7 @@ public:
   }
   void solve(int num_iterations) {
     for (int n = 0; n < num_iterations; n++) {
-      residual.calc(Q, R);
+      residual.calc(Q, QG, R);
       double norm = calcNorm(R);
       printf("%d L2(R) = %e\n", n, norm);
       updateQ();
@@ -62,7 +62,7 @@ public:
   StaticArray<NumEqns> Q_reference;
   SolutionArray<NumEqns> Q;
   SolutionArray<NumEqns> R;
-  SolutionArray<2> QG;
+  SolutionArray<NumGasVars> QG;
   double dt = 1.0e-8;
 
   void setInitialConditions() {
@@ -79,6 +79,9 @@ public:
     };
 
     Kokkos::parallel_for(grid.numCells(), update);
+
+    setBCs();
+    calcGasVariables();
   }
   void setBCs() {
     auto set = KOKKOS_LAMBDA(int c) {
@@ -109,12 +112,16 @@ public:
   void calcGasVariables() {
     auto calc = KOKKOS_LAMBDA(int c) {
       QG.d_view(c, 0) = 1.4;
-      auto q = Q.d_view;
-      double press = (q(c, 0) - 1.0) * (q(c, 4) - 0.5 * (q(c, 1) * q(c, 1) + q(c, 2) * q(c, 2) + q(c, 3) * q(c, 3)) / q(c, 0));
+      StaticArray<NumEqns> q;
+      for(int e = 0; e < NumEqns; e++){
+        q[e] = Q.d_view(c, e);
+      }
+      double press = perfect_gas::calcPressure(q, QG.d_view(c, 0));
       QG.d_view(c, 1) = press;
     };
 
     Kokkos::parallel_for(grid.numCells(), calc);
+    Kokkos::deep_copy(QG.h_view, QG.d_view);
   }
 };
 } // namespace vul

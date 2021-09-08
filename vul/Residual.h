@@ -8,7 +8,7 @@ template <size_t N, size_t NG> class Residual {
 public:
   Residual(const Grid *grid) : grid(grid) {}
 
-  void calc(const SolutionArray<N> &Q, SolutionArray<N> &R) {
+  void calc(const SolutionArray<N> &Q, const SolutionArray<2>& QG, SolutionArray<N> &R) {
 
     int num_faces = grid->face_to_cell.extent_int(0);
     for (int f = 0; f < num_faces; f++) {
@@ -24,10 +24,10 @@ public:
 
       StaticArray<NG> qgl, qgr;
       for(int e = 0; e < NG; e++){
-        qgl[e] = Q.d_view(cell_l, e);
+        qgl[e] = QG.d_view(cell_l, e);
       }
       for(int e = 0; e < NG; e++){
-        qgr[e] = Q.d_view(cell_r, e);
+        qgr[e] = QG.d_view(cell_r, e);
       }
       Point<double> face_area;
       face_area.x = grid->face_area.d_view(f, 0);
