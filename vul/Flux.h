@@ -10,10 +10,10 @@ public:
     mach = int(std::abs(mach));
     return -std::max(0.0, 1.0 - int(mach));
   }
-  template <size_t N>
+  template <size_t N, size_t NG>
   static StaticArray<N>
   inviscidFlux(const StaticArray<N> &ql, const StaticArray<N> qr,
-               const StaticArray<3> &qgl, const StaticArray<3> &qgr,
+               const StaticArray<NG> &qgl, const StaticArray<NG> &qgr,
                const Point<double> &area_normal) {
     Point<double> norm{area_normal.x, area_normal.y, area_normal.z};
     double area = norm.magnitude();

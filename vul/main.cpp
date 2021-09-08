@@ -4,8 +4,8 @@
 #include "Vulcan.h"
 
 void solve(std::string filename) {
-  vul::Vulcan<5> vulcan(filename);
-  int num_iterations = 1000;
+  vul::Vulcan<5, 2> vulcan(filename);
+  int num_iterations = 1;
   vulcan.solve(num_iterations);
 }
 

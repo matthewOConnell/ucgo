@@ -188,7 +188,6 @@ vul::Grid::Grid(std::string filename) {
 
   buildFaces();
   computeCellVolumes();
-
 }
 
 void vul::Grid::readPoints(FILE *fp) {
@@ -321,17 +320,18 @@ void vul::Grid::printSummary() const {
            hexs.h_view(p, 7));
   }
   first_few = std::min(3, int(cell_face_neighbors.size()));
-  for(int c = 0; c < first_few; c++){
+  for (int c = 0; c < first_few; c++) {
     printf("cell %d face neighbors: ", c);
-    for(auto n : cell_face_neighbors[c]){
+    for (auto n : cell_face_neighbors[c]) {
       printf("%d ", n);
     }
     printf("\n");
   }
 
   first_few = std::min(3, face_to_cell.extent_int(0));
-  for(int f = 0; f < first_few; f++){
-    printf("face %d %d\n", face_to_cell.h_view(f, 0), face_to_cell.h_view(f, 1));
+  for (int f = 0; f < first_few; f++) {
+    printf("face %d %d\n", face_to_cell.h_view(f, 0),
+           face_to_cell.h_view(f, 1));
   }
 }
 
@@ -416,20 +416,29 @@ void vul::Grid::buildFaces() {
   node_to_cell        = buildNodeToCell();
   cell_face_neighbors = buildFaceNeighbors();
 
-  // This math for num faces doesn't work in parallel if there are volume
-  // cells that don't have face neighbors on rank.
-  int num_faces = 6*numHexs() + 5*numPyramids() + 5*numPrisms() + 4*numTets() + numTris() + numQuads();
-  num_faces /= 2;
-  face_to_cell = FaceToCells("face_to_cell", num_faces);
-  face_area = FaceArea("face_area", num_faces);
+  {
+    // This math for num faces doesn't work in parallel if there are volume
+    // cells that don't have face neighbors on rank.
+    int num_faces = 6 * numHexs() + 5 * numPyramids() + 5 * numPrisms() +
+                    4 * numTets() + numTris() + numQuads();
+    num_faces /= 2;
+    face_to_cell = FaceToCells("face_to_cell", num_faces);
+    face_area    = FaceArea("face_area", num_faces);
+  }
 
   int next_face = 0;
-  for(int c = 0; c < numCells(); c++){
-    for(int neighbor : cell_face_neighbors[c]){
-      if(c < neighbor) {
-        face_to_cell.h_view(next_face,0) = c;
-        face_to_cell.h_view(next_face,1) = neighbor;
-        Point<double> area;
+  std::vector<int> cell_nodes;
+  for (int c = 0; c < numCells(); c++) {
+    int num_faces = int(cell_face_neighbors[c].size());
+    for (int face_number = 0; face_number < num_faces; face_number++) {
+      int neighbor       = cell_face_neighbors[c][face_number];
+      auto [type, index] = cellIdToTypeAndIndexPair(c);
+      cell_nodes.resize(cellLength(c));
+      Cell cell(type, cell_nodes);
+      if (c < neighbor) {
+        face_to_cell.h_view(next_face, 0) = c;
+        face_to_cell.h_view(next_face, 1) = neighbor;
+        Point<double> area             = calcFaceArea(cell.face(face_number));
         face_area.h_view(next_face, 0) = area.x;
         face_area.h_view(next_face, 1) = area.y;
         face_area.h_view(next_face, 2) = area.z;
@@ -440,7 +449,7 @@ void vul::Grid::buildFaces() {
   Kokkos::deep_copy(face_to_cell.d_view, face_to_cell.h_view);
   Kokkos::deep_copy(face_area.d_view, face_area.h_view);
 }
-void vul::Grid::getCell(int cell_id, std::vector<int>& cell_nodes) const {
+void vul::Grid::getCell(int cell_id, std::vector<int> &cell_nodes) const {
   cell_nodes.resize(cellLength(cell_id));
   getCell(cell_id, cell_nodes.data());
 }
@@ -579,13 +588,14 @@ vul::Point<double>
 vul::Grid::calcFaceArea(const std::vector<int> &face_nodes) const {
   std::array<Point<double>, 4> face_points;
   bool is_quad = face_nodes.size() == 4;
-  for(int i = 0; i < 4; i++){
-    if(not is_quad) break; // break out for triangles;
+  for (int i = 0; i < 4; i++) {
+    if (not is_quad)
+      break; // break out for triangles;
     int n = face_nodes[i];
     Point<double> p;
-    p.x = points.h_view(n, 0);
-    p.y = points.h_view(n, 1);
-    p.z = points.h_view(n, 2);
+    p.x            = points.h_view(n, 0);
+    p.y            = points.h_view(n, 1);
+    p.z            = points.h_view(n, 2);
     face_points[i] = p;
   }
 
@@ -594,68 +604,65 @@ vul::Grid::calcFaceArea(const std::vector<int> &face_nodes) const {
 
   Point<double> area = u.cross(v) * 0.5;
 
-  if(is_quad){
-    u = face_points[0] - face_points[3];
-    v = face_points[2] - face_points[3];
-    area = area + u.cross(v)*0.5;
+  if (is_quad) {
+    u    = face_points[0] - face_points[3];
+    v    = face_points[2] - face_points[3];
+    area = area + u.cross(v) * 0.5;
   }
 
   return area;
-
 }
 void vul::Grid::computeCellVolumes() {
-  int offset = 0;
+  int offset  = 0;
   cell_volume = Vec1D<double>("cell_volume", numCells());
-  for(int t = 0; t < numTets(); t++){
-    double vol = computeTetVolume(t);
-    cell_volume.h_view(t+offset) = vol;
+  for (int t = 0; t < numTets(); t++) {
+    double vol                     = computeTetVolume(t);
+    cell_volume.h_view(t + offset) = vol;
   }
   offset += numTets();
 
-  for(int p = 0; p < numPyramids(); p++){
-    double vol = computePyramidVolume(p);
-    cell_volume.h_view(p+offset) = vol;
+  for (int p = 0; p < numPyramids(); p++) {
+    double vol                     = computePyramidVolume(p);
+    cell_volume.h_view(p + offset) = vol;
   }
   offset += numPyramids();
-  for(int p = 0; p < numPrisms(); p++){
-    double vol = computePrismVolume(p);
-    cell_volume.h_view(p+offset) = vol;
+  for (int p = 0; p < numPrisms(); p++) {
+    double vol                     = computePrismVolume(p);
+    cell_volume.h_view(p + offset) = vol;
   }
   offset += numPrisms();
-  for(int p = 0; p < numHexs(); p++){
-    double vol = computeHexVolume(p);
-    cell_volume.h_view(p+offset) = vol;
+  for (int p = 0; p < numHexs(); p++) {
+    double vol                     = computeHexVolume(p);
+    cell_volume.h_view(p + offset) = vol;
   }
   offset += numHexs();
-  for(int p = 0; p < numTris(); p++){
-    cell_volume.h_view(p+offset) = 0.0;
+  for (int p = 0; p < numTris(); p++) {
+    cell_volume.h_view(p + offset) = 0.0;
   }
   offset += numTris();
-  for(int p = 0; p < numQuads(); p++){
-    cell_volume.h_view(p+offset) = 0.0;
+  for (int p = 0; p < numQuads(); p++) {
+    cell_volume.h_view(p + offset) = 0.0;
   }
-
 }
 vul::Point<double> vul::Grid::getPoint(int n) const {
   return Point<double>{points.h_view(n, 0), points.h_view(n, 1),
-                         points.h_view(n, 2)};
-
+                       points.h_view(n, 2)};
 }
 double vul::Grid::computeTetVolume(int t) {
-  auto a = getPoint(tets.h_view(t, 0));
-  auto b = getPoint(tets.h_view(t, 1));
-  auto c = getPoint(tets.h_view(t, 2));
-  auto d = getPoint(tets.h_view(t, 3));
+  auto a   = getPoint(tets.h_view(t, 0));
+  auto b   = getPoint(tets.h_view(t, 1));
+  auto c   = getPoint(tets.h_view(t, 2));
+  auto d   = getPoint(tets.h_view(t, 3));
   auto vol = computeTetVolume(a, b, c, d);
   return vol;
 }
 double vul::Grid::computePyramidVolume(int p) {
-  auto a = getPoint(pyramids.h_view(p, 0));
-  auto b = getPoint(pyramids.h_view(p, 1));
-  auto c = getPoint(pyramids.h_view(p, 2));
-  auto d = getPoint(pyramids.h_view(p, 3));
-  auto e = getPoint(pyramids.h_view(p, 4));
-  auto z = (a + b + c + d) * 0.25;
+  auto a   = getPoint(pyramids.h_view(p, 0));
+  auto b   = getPoint(pyramids.h_view(p, 1));
+  auto c   = getPoint(pyramids.h_view(p, 2));
+  auto d   = getPoint(pyramids.h_view(p, 3));
+  auto e   = getPoint(pyramids.h_view(p, 4));
+  auto z   = (a + b + c + d) * 0.25;
   auto vol = computeTetVolume(a, b, z, e);
   vol += computeTetVolume(b, c, z, e);
   vol += computeTetVolume(c, d, z, e);
@@ -670,7 +677,7 @@ double vul::Grid::computePrismVolume(int p) {
   auto e = getPoint(prisms.h_view(p, 4));
   auto f = getPoint(prisms.h_view(p, 5));
 
-  auto centroid = (a + b + c + d + e + f) * (1.0/6.0);
+  auto centroid = (a + b + c + d + e + f) * (1.0 / 6.0);
 
   double vol = computeTetVolume(a, b, c, centroid);
   vol += computeTetVolume(b, e, c, centroid);
@@ -686,17 +693,17 @@ double vul::Grid::computePrismVolume(int p) {
   return vol;
 }
 double vul::Grid::computeHexVolume(int p) {
-  auto a = getPoint(hexs.h_view(p, 0));
-  auto b = getPoint(hexs.h_view(p, 1));
-  auto c = getPoint(hexs.h_view(p, 2));
-  auto d = getPoint(hexs.h_view(p, 3));
-  auto e = getPoint(hexs.h_view(p, 4));
-  auto f = getPoint(hexs.h_view(p, 5));
-  auto g = getPoint(hexs.h_view(p, 6));
-  auto h = getPoint(hexs.h_view(p, 7));
+  auto a     = getPoint(hexs.h_view(p, 0));
+  auto b     = getPoint(hexs.h_view(p, 1));
+  auto c     = getPoint(hexs.h_view(p, 2));
+  auto d     = getPoint(hexs.h_view(p, 3));
+  auto e     = getPoint(hexs.h_view(p, 4));
+  auto f     = getPoint(hexs.h_view(p, 5));
+  auto g     = getPoint(hexs.h_view(p, 6));
+  auto h     = getPoint(hexs.h_view(p, 7));
   double vol = 0.0;
 
-  auto centroid = (a + b + c + d + e +f + g + h) * (1.0 / 8.0);
+  auto centroid = (a + b + c + d + e + f + g + h) * (1.0 / 8.0);
 
   vol += computeTetVolume(a, b, d, centroid);
   vol += computeTetVolume(b, c, d, centroid);

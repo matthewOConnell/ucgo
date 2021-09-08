@@ -2,6 +2,7 @@ add_subdirectory(doctest)
 
 
 set(test_sources
+        ArrayTests.cpp
         GridTests.cpp
         PointTests.cpp
         )

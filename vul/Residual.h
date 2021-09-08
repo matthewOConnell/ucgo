@@ -4,7 +4,7 @@
 #include "Solution.h"
 
 namespace vul {
-template <int N> class Residual {
+template <size_t N, size_t NG> class Residual {
 public:
   Residual(const Grid *grid) : grid(grid) {}
 
@@ -15,14 +15,20 @@ public:
       int cell_l = grid->face_to_cell.d_view(f, 0);
       int cell_r = grid->face_to_cell.d_view(f, 1);
       StaticArray<N> ql, qr;
-      for (int e = 0; e < 5; e++) {
+      for (int e = 0; e < N; e++) {
         ql[e] = Q.d_view(cell_l, e);
       }
-      for (int e = 0; e < 5; e++) {
+      for (int e = 0; e < N; e++) {
         qr[e] = Q.d_view(cell_r, e);
       }
 
-      StaticArray<3> qgl, qgr;
+      StaticArray<NG> qgl, qgr;
+      for(int e = 0; e < NG; e++){
+        qgl[e] = Q.d_view(cell_l, e);
+      }
+      for(int e = 0; e < NG; e++){
+        qgr[e] = Q.d_view(cell_r, e);
+      }
       Point<double> face_area;
       face_area.x = grid->face_area.d_view(f, 0);
       face_area.y = grid->face_area.d_view(f, 1);
