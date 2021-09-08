@@ -8,9 +8,9 @@ public:
                               const Point<double> &face_area) {
     int num_species = 1;
     const double *densities    = &q[0];
-    const double &u            = q[1];
-    const double &v            = q[2];
-    const double &w            = q[3];
+    const double &u            = q[1]/q[0];
+    const double &v            = q[2]/q[0];
+    const double &w            = q[3]/q[0];
     const double &total_energy = q[4];
     const double pressure = qg[1];
 
@@ -22,7 +22,7 @@ public:
 
     StaticArray<N> physical_fluxes;
     for (int s = 0; s < num_species; ++s)
-      physical_fluxes[0 + s] = unorm * densities[s];
+      physical_fluxes[s] = unorm * densities[s];
 
     physical_fluxes[1] = unorm * density * u + face_area.x * pressure;
     physical_fluxes[2] = unorm * density * v + face_area.y * pressure;
