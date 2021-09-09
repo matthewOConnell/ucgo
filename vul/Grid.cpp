@@ -369,36 +369,6 @@ vul::CellType vul::Grid::cellType(int cell_id) const {
   auto pair = cellIdToTypeAndIndexPair(cell_id);
   return pair.first;
 }
-KOKKOS_FUNCTION std::pair<vul::CellType, int>
-vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
-  int orig_cell_id = cell_id;
-  if (cell_id < numTets())
-    return {TET, cell_id};
-  cell_id -= numTets();
-  if (cell_id < numPyramids())
-    return {PYRAMID, cell_id};
-  cell_id -= numPyramids();
-  if (cell_id < numPrisms())
-    return {PRISM, cell_id};
-  cell_id -= numPrisms();
-  if (cell_id < numHexs())
-    return {HEX, cell_id};
-  cell_id -= numHexs();
-  if (cell_id < numTris())
-    return {TRI, cell_id};
-  cell_id -= numTris();
-  if (cell_id < numQuads())
-    return {QUAD, cell_id};
-  cell_id -= numQuads();
-  //VUL_ASSERT(false, "Could not find type of cell_id " + std::to_string(orig_cell_id));
-}
-KOKKOS_FUNCTION int vul::Grid::numPoints() const { return points.extent_int(0); }
-KOKKOS_FUNCTION int vul::Grid::numTets() const { return tets.extent_int(0); }
-KOKKOS_FUNCTION int vul::Grid::numPyramids() const { return pyramids.extent_int(0); }
-KOKKOS_FUNCTION int vul::Grid::numPrisms() const { return prisms.extent_int(0); }
-KOKKOS_FUNCTION int vul::Grid::numHexs() const { return hexs.extent_int(0); }
-KOKKOS_FUNCTION int vul::Grid::numTris() const { return tris.extent_int(0); }
-KOKKOS_FUNCTION int vul::Grid::numQuads() const { return quads.extent_int(0); }
 
 std::vector<std::vector<int>> vul::Grid::buildFaceNeighbors() {
   std::vector<std::vector<int>> neighbors(numCells());
@@ -495,13 +465,6 @@ void vul::Grid::getCell(int cell_id, int *cell_nodes) const {
   }
   }
   VUL_ASSERT(false, "Could not match cell type: " + std::to_string(cell_type));
-}
-KOKKOS_FUNCTION int vul::Grid::numCells() const {
-  return numTets() + numPyramids() + numPrisms() + numHexs() + numTris() +
-         numQuads();
-}
-KOKKOS_FUNCTION int vul::Grid::numVolumeCells() const {
-  return numTets() + numPyramids() + numPrisms() + numHexs();
 }
 std::vector<std::set<int>> vul::Grid::buildNodeToCell() {
   std::vector<std::set<int>> n2c(numPoints());
