@@ -43,10 +43,9 @@ TEST_CASE("Can build faces from a ugrid") {
   REQUIRE(grid.count(vul::HEX) == 100);
 
   REQUIRE(grid.count(vul::FACE) == 501);
-  REQUIRE(grid.face_area.h_view(0,2) == -0.001);
+  REQUIRE(grid.face_area.h_view(0, 2) == -0.001);
   grid.printSummary();
 }
-
 
 TEST_CASE("vul::Cell exists") {
   std::string assets_dir = ASSETS_DIR;
@@ -82,19 +81,49 @@ TEST_CASE("vul::Cell exists") {
   REQUIRE(qua.face(0) == std::vector<int>{3, 2, 1, 0});
 }
 
-TEST_CASE("Can compute grid metrics"){
+TEST_CASE("Can compute grid metrics") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
   vul::Grid grid(filename);
 
   std::vector<int> face_nodes = {0, 3, 2, 1};
-  auto face_area = grid.calcFaceArea(face_nodes);
+  auto face_area              = grid.calcFaceArea(face_nodes);
   REQUIRE(face_area.x == 0);
   REQUIRE(face_area.y == -1.0);
   REQUIRE(face_area.z == 0);
 
-  REQUIRE(grid.cell_volume.h_view(0) == 1.0/24.0); // tet
-  REQUIRE(grid.cell_volume.h_view(1) == 1.0/6.0); // pyramid
-  REQUIRE(grid.cell_volume.h_view(2) == 0.1); // prism
-  REQUIRE(grid.cell_volume.h_view(3) == 1.0); // hex
+  REQUIRE(grid.cell_volume.h_view(0) == 1.0 / 24.0); // tet
+  REQUIRE(grid.cell_volume.h_view(1) == 1.0 / 6.0);  // pyramid
+  REQUIRE(grid.cell_volume.h_view(2) == 0.1);        // prism
+  REQUIRE(grid.cell_volume.h_view(3) == 1.0);        // hex
+}
+
+TEST_CASE("Can convert to inf ordering") {
+  std::string assets_dir = ASSETS_DIR;
+  std::string filename   = assets_dir + "/13-node.lb8.ugrid";
+  vul::Grid grid(filename);
+
+  // -- Triangles come first in Inf ordering
+  REQUIRE(grid.getVulCellIdFromInfId(0) == 4);
+  REQUIRE(grid.getVulCellIdFromInfId(1) == 5);
+  REQUIRE(grid.getVulCellIdFromInfId(2) == 6);
+  REQUIRE(grid.getVulCellIdFromInfId(3) == 7);
+  REQUIRE(grid.getVulCellIdFromInfId(4) == 8);
+  REQUIRE(grid.getVulCellIdFromInfId(5) == 9);
+
+  // -- Quads come next
+  REQUIRE(grid.getVulCellIdFromInfId(6) == 10);
+  REQUIRE(grid.getVulCellIdFromInfId(7) == 11);
+  REQUIRE(grid.getVulCellIdFromInfId(8) == 12);
+  REQUIRE(grid.getVulCellIdFromInfId(9) == 13);
+  REQUIRE(grid.getVulCellIdFromInfId(10) == 14);
+  REQUIRE(grid.getVulCellIdFromInfId(11) == 15);
+  REQUIRE(grid.getVulCellIdFromInfId(12) == 16);
+  REQUIRE(grid.getVulCellIdFromInfId(13) == 17);
+
+  // -- Then volume cells, Tet first
+  REQUIRE(grid.getVulCellIdFromInfId(14) == 0);
+  REQUIRE(grid.getVulCellIdFromInfId(15) == 1);
+  REQUIRE(grid.getVulCellIdFromInfId(16) == 2);
+  REQUIRE(grid.getVulCellIdFromInfId(17) == 3);
 }

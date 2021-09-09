@@ -28,7 +28,7 @@ public:
   void updateQ() const {
     auto update = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q.d_view(c, e) = Q.d_view(c, e) - dt * R.d_view(c, e);
+        Q.d_view(c, e) = Q.d_view(c, e) + dt * R.d_view(c, e);
       }
     };
 
@@ -63,7 +63,7 @@ public:
   SolutionArray<NumEqns> Q;
   SolutionArray<NumEqns> R;
   SolutionArray<NumGasVars> QG;
-  double dt = 1.0e-8;
+  double dt = 1.0e-11;
 
   void setInitialConditions() {
     Q_reference[0] = 1.000000;
@@ -75,6 +75,10 @@ public:
     auto update = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
         Q.d_view(c, e) = Q_reference[e];
+      }
+      auto [type, index] = grid.cellIdToTypeAndIndexPair(c);
+      if (type != vul::TRI and type != vul::QUAD) {
+          Q.d_view(c, 1) = 1.1*Q_reference[1];
       }
     };
 

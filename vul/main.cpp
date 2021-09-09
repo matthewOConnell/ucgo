@@ -5,7 +5,7 @@
 
 void solve(std::string filename) {
   vul::Vulcan<5, 2> vulcan(filename);
-  int num_iterations = 1;
+  int num_iterations = 10000;
   vulcan.solve(num_iterations);
 }
 

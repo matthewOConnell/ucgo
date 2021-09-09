@@ -58,6 +58,7 @@ public:
 
   void getCell(int cell_id, int *cell_nodes) const;
   void getCell(int cell_id, std::vector<int> &cell_nodes) const;
+  int getVulCellIdFromInfId(int inf_id) const;
 
 public:
   PointVector<double> points;

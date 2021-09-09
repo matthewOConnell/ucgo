@@ -371,6 +371,7 @@ vul::CellType vul::Grid::cellType(int cell_id) const {
 }
 std::pair<vul::CellType, int>
 vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
+  int orig_cell_id = cell_id;
   if (cell_id < numTets())
     return {TET, cell_id};
   cell_id -= numTets();
@@ -389,7 +390,7 @@ vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
   if (cell_id < numQuads())
     return {QUAD, cell_id};
   cell_id -= numQuads();
-  VUL_ASSERT(false, "Could not find type of cell_id" + std::to_string(cell_id));
+  VUL_ASSERT(false, "Could not find type of cell_id " + std::to_string(orig_cell_id));
 }
 int vul::Grid::numPoints() const { return points.extent_int(0); }
 int vul::Grid::numTets() const { return tets.extent_int(0); }
@@ -735,6 +736,14 @@ double vul::Grid::computeTetVolume(const Point<double> &a,
   auto v3 = c - d;
   auto v  = v2.cross(v3);
   return -v1.dot(v) / 6.0;
+}
+int vul::Grid::getVulCellIdFromInfId(int inf_id) const {
+  int num_surface = numTris() + numQuads();
+  if(inf_id < num_surface){
+    return inf_id + numVolumeCells();
+  } else {
+    return inf_id - num_surface;
+  }
 }
 std::vector<int> vul::Cell::face(int i) const {
   std::vector<int> face;
