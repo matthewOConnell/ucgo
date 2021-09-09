@@ -23,12 +23,19 @@ public:
       updateQ();
       setBCs();
       calcGasVariables();
+
+      if(n % plot_freq == 0){
+        Kokkos::deep_copy(Q.h_view, Q.d_view);
+        Kokkos::deep_copy(QG.h_view, QG.d_view);
+        writeCSV("output." + std::to_string(n) + ".csv");
+      }
     }
   }
   void updateQ() const {
     auto update = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q.d_view(c, e) = Q.d_view(c, e) + dt * R.d_view(c, e);
+        Q.d_view(c, e) = Q.d_view(c, e) - dt * R.d_view(c, e);
+        R.d_view(c, e) = 0.0;
       }
     };
 
@@ -47,9 +54,10 @@ public:
       }
       fprintf(fp, "\n");
     }
-    for (int c = 0; c < grid.numCells(); c++) {
+    for (int inf_id = 0; inf_id < grid.numCells(); inf_id++) {
+      int vul_id = grid.getVulCellIdFromInfId(inf_id);
       for (int e = 0; e < NumEqns; e++) {
-        fprintf(fp, "%e ", Q.h_view(c, e));
+        fprintf(fp, "%e, ", Q.h_view(vul_id, e));
       }
       fprintf(fp, "\n");
     }
@@ -63,7 +71,8 @@ public:
   SolutionArray<NumEqns> Q;
   SolutionArray<NumEqns> R;
   SolutionArray<NumGasVars> QG;
-  double dt = 1.0e-11;
+  double dt = 10.0;
+  int plot_freq = 10;
 
   void setInitialConditions() {
     Q_reference[0] = 1.000000;
