@@ -11,9 +11,11 @@ public:
   void calc(const SolutionArray<N> &Q, const SolutionArray<2>& QG, SolutionArray<N> &R) {
 
     int num_faces = grid->face_to_cell.extent_int(0);
-    for (int f = 0; f < num_faces; f++) {
-      int cell_l = grid->face_to_cell.d_view(f, 0);
-      int cell_r = grid->face_to_cell.d_view(f, 1);
+    auto face_to_cell = grid->face_to_cell.d_view;
+    auto face_areas = grid->face_area.d_view;
+    auto do_calculation = KOKKOS_CLASS_LAMBDA(int f) {
+      int cell_l = face_to_cell(f, 0);
+      int cell_r = face_to_cell(f, 1);
       StaticArray<N> ql, qr;
       for (int e = 0; e < N; e++) {
         ql[e] = Q.d_view(cell_l, e);
@@ -30,9 +32,9 @@ public:
         qgr[e] = QG.d_view(cell_r, e);
       }
       Point<double> face_area;
-      face_area.x = grid->face_area.d_view(f, 0);
-      face_area.y = grid->face_area.d_view(f, 1);
-      face_area.z = grid->face_area.d_view(f, 2);
+      face_area.x = face_areas(f, 0);
+      face_area.y = face_areas(f, 1);
+      face_area.z = face_areas(f, 2);
       auto F = LDFSSFlux::inviscidFlux(ql, qr, qgl, qgr, face_area);
 
 //       some kind of mutex on R(cell_l) R(cell_r)
@@ -42,7 +44,10 @@ public:
       for(int e = 0; e < N; e++){
         Kokkos::atomic_add(&R.d_view(cell_r, e), -F[e]);
       }
-    }
+    };
+
+  Kokkos::parallel_for("residual-calc", num_faces, do_calculation);
+  
   }
 
 private:

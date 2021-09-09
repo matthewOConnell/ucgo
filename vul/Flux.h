@@ -15,11 +15,12 @@ struct EquationIndex {
 
 class LDFSSFlux {
 public:
-  inline static double calcBeta(double mach) {
+  KOKKOS_INLINE_FUNCTION static double calcBeta(double mach) {
     mach = int(std::abs(mach));
     return -std::max(0.0, 1.0 - int(mach));
   }
   template <size_t N, size_t NG>
+  KOKKOS_FUNCTION 
   static StaticArray<N>
   inviscidFlux(const StaticArray<N> &ql, const StaticArray<N> qr,
                const StaticArray<NG> &qgl, const StaticArray<NG> &qgr,

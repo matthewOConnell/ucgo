@@ -24,7 +24,7 @@ public:
       setBCs();
       calcGasVariables();
 
-      if(n % plot_freq == 0){
+      if(plot_freq > 0 and n % plot_freq == 0){
         Kokkos::deep_copy(Q.h_view, Q.d_view);
         Kokkos::deep_copy(QG.h_view, QG.d_view);
         writeCSV("output." + std::to_string(n) + ".csv");
@@ -72,9 +72,10 @@ public:
   SolutionArray<NumEqns> R;
   SolutionArray<NumGasVars> QG;
   double dt = 10.0;
-  int plot_freq = 10;
+  int plot_freq = -1;
 
   void setInitialConditions() {
+      Kokkos::Profiling::pushRegion("setInitialConditions");
     Q_reference[0] = 1.000000;
     Q_reference[1] = 1.000000;
     Q_reference[2] = 0.000000;
@@ -91,7 +92,8 @@ public:
       }
     };
 
-    Kokkos::parallel_for(grid.numCells(), update);
+    Kokkos::parallel_for("set initial condition", grid.numCells(), update);
+      Kokkos::Profiling::popRegion();
 
     setBCs();
     calcGasVariables();
