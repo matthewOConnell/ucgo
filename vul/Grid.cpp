@@ -369,7 +369,7 @@ vul::CellType vul::Grid::cellType(int cell_id) const {
   auto pair = cellIdToTypeAndIndexPair(cell_id);
   return pair.first;
 }
-std::pair<vul::CellType, int>
+KOKKOS_FUNCTION std::pair<vul::CellType, int>
 vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
   int orig_cell_id = cell_id;
   if (cell_id < numTets())
@@ -390,15 +390,15 @@ vul::Grid::cellIdToTypeAndIndexPair(int cell_id) const {
   if (cell_id < numQuads())
     return {QUAD, cell_id};
   cell_id -= numQuads();
-  VUL_ASSERT(false, "Could not find type of cell_id " + std::to_string(orig_cell_id));
+  //VUL_ASSERT(false, "Could not find type of cell_id " + std::to_string(orig_cell_id));
 }
-int vul::Grid::numPoints() const { return points.extent_int(0); }
-int vul::Grid::numTets() const { return tets.extent_int(0); }
-int vul::Grid::numPyramids() const { return pyramids.extent_int(0); }
-int vul::Grid::numPrisms() const { return prisms.extent_int(0); }
-int vul::Grid::numHexs() const { return hexs.extent_int(0); }
-int vul::Grid::numTris() const { return tris.extent_int(0); }
-int vul::Grid::numQuads() const { return quads.extent_int(0); }
+KOKKOS_FUNCTION int vul::Grid::numPoints() const { return points.extent_int(0); }
+KOKKOS_FUNCTION int vul::Grid::numTets() const { return tets.extent_int(0); }
+KOKKOS_FUNCTION int vul::Grid::numPyramids() const { return pyramids.extent_int(0); }
+KOKKOS_FUNCTION int vul::Grid::numPrisms() const { return prisms.extent_int(0); }
+KOKKOS_FUNCTION int vul::Grid::numHexs() const { return hexs.extent_int(0); }
+KOKKOS_FUNCTION int vul::Grid::numTris() const { return tris.extent_int(0); }
+KOKKOS_FUNCTION int vul::Grid::numQuads() const { return quads.extent_int(0); }
 
 std::vector<std::vector<int>> vul::Grid::buildFaceNeighbors() {
   std::vector<std::vector<int>> neighbors(numCells());
@@ -496,11 +496,11 @@ void vul::Grid::getCell(int cell_id, int *cell_nodes) const {
   }
   VUL_ASSERT(false, "Could not match cell type: " + std::to_string(cell_type));
 }
-int vul::Grid::numCells() const {
+KOKKOS_FUNCTION int vul::Grid::numCells() const {
   return numTets() + numPyramids() + numPrisms() + numHexs() + numTris() +
          numQuads();
 }
-int vul::Grid::numVolumeCells() const {
+KOKKOS_FUNCTION int vul::Grid::numVolumeCells() const {
   return numTets() + numPyramids() + numPrisms() + numHexs();
 }
 std::vector<std::set<int>> vul::Grid::buildNodeToCell() {

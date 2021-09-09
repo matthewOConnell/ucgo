@@ -32,7 +32,7 @@ public:
     }
   }
   void updateQ() const {
-    auto update = KOKKOS_LAMBDA(int c) {
+    auto update = KOKKOS_CLASS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
         Q.d_view(c, e) = Q.d_view(c, e) - dt * R.d_view(c, e);
         R.d_view(c, e) = 0.0;
@@ -81,7 +81,7 @@ public:
     Q_reference[3] = 0.000000;
     Q_reference[4] = 2.255499;
 
-    auto update = KOKKOS_LAMBDA(int c) {
+    auto update = KOKKOS_CLASS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
         Q.d_view(c, e) = Q_reference[e];
       }
@@ -97,7 +97,7 @@ public:
     calcGasVariables();
   }
   void setBCs() {
-    auto set = KOKKOS_LAMBDA(int c) {
+    auto set = KOKKOS_CLASS_LAMBDA(int c) {
       auto [type, index] = grid.cellIdToTypeAndIndexPair(c);
       if (type == vul::TRI or type == vul::QUAD) {
         for (int e = 0; e < NumEqns; e++) {
@@ -109,11 +109,12 @@ public:
     Kokkos::parallel_for(grid.numCells(), set);
   }
 
-  double calcNorm(const SolutionArray<NumEqns> &A) {
+  double calcNorm(const SolutionArray<NumEqns> &A_in) {
     double norm    = 0.0;
+    auto A = A_in.d_view;
     auto calc_norm = KOKKOS_LAMBDA(int c, double &norm) {
       for (int e = 0; e < NumEqns; e++) {
-        norm += A.d_view(c, e) * A.d_view(c, e);
+        norm += A(c, e) * A(c, e);
       }
     };
 
@@ -123,7 +124,7 @@ public:
   }
 
   void calcGasVariables() {
-    auto calc = KOKKOS_LAMBDA(int c) {
+    auto calc = KOKKOS_CLASS_LAMBDA(int c) {
       QG.d_view(c, 0) = 1.4;
       StaticArray<NumEqns> q;
       for(int e = 0; e < NumEqns; e++){

@@ -41,20 +41,20 @@ public:
 
   Vec2D<int> getCellArray(CellType type);
 
-  std::pair<CellType, int> cellIdToTypeAndIndexPair(int cell_id) const;
+  KOKKOS_FUNCTION std::pair<CellType, int> cellIdToTypeAndIndexPair(int cell_id) const;
   Point<double> getPoint(int node_id) const;
 
   void printSummary() const;
 
-  int numCells() const;
-  int numVolumeCells() const;
-  int numPoints() const;
-  int numTets() const;
-  int numPyramids() const;
-  int numPrisms() const;
-  int numHexs() const;
-  int numTris() const;
-  int numQuads() const;
+  KOKKOS_FUNCTION int numCells() const;
+  KOKKOS_FUNCTION int numVolumeCells() const;
+  KOKKOS_FUNCTION int numPoints() const;
+  KOKKOS_FUNCTION int numTets() const;
+  KOKKOS_FUNCTION int numPyramids() const;
+  KOKKOS_FUNCTION int numPrisms() const;
+  KOKKOS_FUNCTION int numHexs() const;
+  KOKKOS_FUNCTION int numTris() const;
+  KOKKOS_FUNCTION int numQuads() const;
 
   void getCell(int cell_id, int *cell_nodes) const;
   void getCell(int cell_id, std::vector<int> &cell_nodes) const;
