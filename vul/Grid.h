@@ -10,6 +10,7 @@
 #include <Kokkos_DualView.hpp>
 #include <set>
 #include <string>
+#include "Solution.h"
 
 namespace vul {
 enum CellType { TRI, QUAD, TET, PYRAMID, PRISM, HEX, FACE };
@@ -38,6 +39,7 @@ public:
   using FaceArea                          = Kokkos::DualView<double *[3]>;
 
   Grid(std::string filename);
+  Grid(int ncells_x, int ncells_y, int ncells_z);
 
   int count(CellType type) const;
   static int typeLength(CellType type);
@@ -69,6 +71,7 @@ cellIdToTypeAndIndexPair(int cell_id) const {
     return {QUAD, cell_id};
   cell_id -= numQuads();
   //VUL_ASSERT(false, "Could not find type of cell_id " + std::to_string(orig_cell_id));
+  return {TRI, -1}; // return bad data.  Hopefully we find it quickly, we can't assert on device...
 }
   Point<double> getPoint(int node_id) const;
 
@@ -135,6 +138,8 @@ public:
   double computePyramidVolume(int p);
   double computePrismVolume(int p);
   double computeHexVolume(int p);
+  void setCartesianPoints(int n_cells_x, int n_cells_y, int n_cells_z);
+  void setCartesianCells(int n_cells_x, int n_cells_y, int n_cells_z);
 };
 
 } // namespace vul

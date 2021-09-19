@@ -3,6 +3,17 @@
 #include <string>
 #include <vul/Grid.h>
 
+TEST_CASE("Can automatically generate a cartesian grid"){
+  vul::Grid grid(2,2,2);
+  REQUIRE(grid.count(vul::TRI) == 0);
+  REQUIRE(grid.count(vul::QUAD) == 24);
+  REQUIRE(grid.count(vul::TET) == 0);
+  REQUIRE(grid.count(vul::PYRAMID) == 0);
+  REQUIRE(grid.count(vul::PRISM) == 0);
+  REQUIRE(grid.count(vul::HEX) == 8);
+  REQUIRE(grid.count(vul::FACE) == 24 + 12);
+}
+
 TEST_CASE("Can read primal data from a ugrid") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/ramp.lb8.ugrid";
