@@ -142,14 +142,16 @@ public:
   }
 
   void calcGasVariables() {
-    auto calc = KOKKOS_CLASS_LAMBDA(int c) {
-      QG.d_view(c, 0) = 1.4;
+    auto QG_device = QG.d_view;
+    auto Q_device = Q.d_view;
+    auto calc = KOKKOS_LAMBDA(int c) {
+      QG_device(c, 0) = 1.4;
       StaticArray<NumEqns> q;
       for(int e = 0; e < NumEqns; e++){
-        q[e] = Q.d_view(c, e);
+        q[e] = Q_device(c, e);
       }
-      double press = perfect_gas::calcPressure(q, QG.d_view(c, 0));
-      QG.d_view(c, 1) = press;
+      double press = perfect_gas::calcPressure(q, QG_device(c, 0));
+      QG_device(c, 1) = press;
     };
 
     Kokkos::parallel_for(grid.numCells(), calc);
