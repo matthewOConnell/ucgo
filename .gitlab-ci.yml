@@ -1,0 +1,20 @@
+stages:
+  - Build
+
+OSX-apple-clang:
+    only:
+      - merge_requests
+    variables:
+        GIT_STRATEGY: fetch
+    tags:
+        - mac
+    stage: Build
+    script:
+        - rm -rf Kokkos
+        - git clone https://github.com/kokkos/kokkos.git Kokkos
+        - rm -rf build
+        - mkdir build
+        - cd build
+        - cmake -DCMAKE_INSTALL_PREFIX=$PWD ..
+        - make -j4
+        - ./test/unit/UnitTests
