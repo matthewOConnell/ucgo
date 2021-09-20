@@ -18,23 +18,26 @@ public:
     int num_faces = grid->face_to_cell.extent_int(0);
     auto face_to_cell = grid->face_to_cell.d_view;
     auto face_areas = grid->face_area.d_view;
-    auto do_calculation = KOKKOS_CLASS_LAMBDA(int f) {
+    auto Q_device = Q.d_view; // solution conserved variables
+    auto QG_device = QG.d_view; // solution gas variables
+    auto R_device = R.d_view; // residual
+    auto do_calculation = KOKKOS_LAMBDA(int f) {
       int cell_l = face_to_cell(f, 0);
       int cell_r = face_to_cell(f, 1);
       StaticArray<N> ql, qr;
       for (int e = 0; e < N; e++) {
-        ql[e] = Q.d_view(cell_l, e);
+        ql[e] = Q_device(cell_l, e);
       }
       for (int e = 0; e < N; e++) {
-        qr[e] = Q.d_view(cell_r, e);
+        qr[e] = Q_device(cell_r, e);
       }
 
       StaticArray<NG> qgl, qgr;
       for(int e = 0; e < NG; e++){
-        qgl[e] = QG.d_view(cell_l, e);
+        qgl[e] = QG_device(cell_l, e);
       }
       for(int e = 0; e < NG; e++){
-        qgr[e] = QG.d_view(cell_r, e);
+        qgr[e] = QG_device(cell_r, e);
       }
       Point<double> face_area;
       face_area.x = face_areas(f, 0);
@@ -42,12 +45,11 @@ public:
       face_area.z = face_areas(f, 2);
       auto F = LDFSSFlux::inviscidFlux(ql, qr, qgl, qgr, face_area);
 
-//       some kind of mutex on R(cell_l) R(cell_r)
       for(int e = 0; e < N; e++){
-        Kokkos::atomic_add(&R.d_view(cell_l, e), F[e]);
+        Kokkos::atomic_add(&R_device(cell_l, e), F[e]);
       }
       for(int e = 0; e < N; e++){
-        Kokkos::atomic_add(&R.d_view(cell_r, e), -F[e]);
+        Kokkos::atomic_add(&R_device(cell_r, e), -F[e]);
       }
     };
 

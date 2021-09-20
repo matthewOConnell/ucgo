@@ -37,14 +37,16 @@ public:
     }
   }
   void updateQ() const {
-    auto update = KOKKOS_CLASS_LAMBDA(int c) {
+    auto Q_device = Q.d_view;
+    auto R_device = R.d_view;
+    auto update = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q.d_view(c, e) = Q.d_view(c, e) - dt * R.d_view(c, e);
-        R.d_view(c, e) = 0.0;
+        Q_device(c, e) = Q_device(c, e) - dt * R_device(c, e);
+        R_device(c, e) = 0.0;
       }
     };
 
-    Kokkos::parallel_for(grid.numCells(), update);
+    Kokkos::parallel_for("updateQ", grid.numCells(), update);
   }
 
   void writeCSV(std::string filename) {
@@ -87,18 +89,25 @@ public:
     Q_reference[3] = 0.000000;
     Q_reference[4] = 2.255499;
 
-    auto update = KOKKOS_CLASS_LAMBDA(int c) {
+    auto Q_device = Q.d_view;
+    auto Q_ref = Q_reference;
+
+    auto update_boundary = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q.d_view(c, e) = Q_reference[e];
-      }
-      auto [type, index] = grid.cellIdToTypeAndIndexPair(c);
-      if (type != vul::TRI and type != vul::QUAD) {
-          Q.d_view(c, 1) = 1.1*Q_reference[1];
+        Q_device(c, e) = Q_ref[e];
       }
     };
+    Kokkos::parallel_for("set initial condition boundary", Kokkos::RangePolicy(grid.boundaryCellsStart(), grid.boundaryCellsEnd()), update_boundary);
 
-    Kokkos::parallel_for("set initial condition", grid.numCells(), update);
-      Kokkos::Profiling::popRegion();
+    auto update_interior = KOKKOS_LAMBDA(int c) {
+      for (int e = 0; e < NumEqns; e++) {
+          Q_device(c, e) = Q_ref[e];
+      }
+      Q_device(c, 1) = 1.1*Q_ref[1]; // perturb first density to give non zero res
+    };
+    Kokkos::parallel_for("set initial condition interior", grid.numVolumeCells(), update_interior);
+
+    Kokkos::Profiling::popRegion();
 
     setBCs();
     calcGasVariables();
