@@ -90,20 +90,22 @@ int main(int num_args, const char *args[]) {
 
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/";
-  if (num_args == 2) {
-    filename += args[1];
-  } else {
-    filename += "shock.lb8.ugrid";
-  }
-
-  // It is best if all the kokkos objects live in a function call
-  // and not in the main function.
-  // So this "solve" method is just a wrapper to do everything
   std::vector<std::string> command_line_args;
   for (int i = 1; i < num_args; i++) {
     auto a = args[i];
     command_line_args.push_back(a);
   }
+  if (command_line_args.empty()) {
+    // -- if no argument given.  Assume 10k grid
+    command_line_args.push_back("-g");
+    command_line_args.push_back("100");
+    command_line_args.push_back("10");
+    command_line_args.push_back("10");
+  }
+
+  // It is best if all the kokkos objects live in a function call
+  // and not in the main function.
+  // So this "solve" method is just a wrapper to do everything
   solve(command_line_args);
 
   Kokkos::finalize();
