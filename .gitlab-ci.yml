@@ -28,6 +28,8 @@ OSX-apple-clang:
 K-build:
     interruptible: true
     stage: Build
+    variables:
+        GIT_STRATEGY: none
     only:
         - merge_requests
     tags:
@@ -40,7 +42,7 @@ K-build:
               echo ${CI_REPOSITORY_URL} &&
               pwd &&
               git clone ${CI_REPOSITORY_URL} ucgo &&
-              cd ucgo && git merge --allow-unrelated-histories ${CI_COMMIT_SHA} && git status &&
+              cd ucgo && git checkout ${CI_COMMIT_SHA} && git status &&
               ./misc/build_k.sh"
 
 
