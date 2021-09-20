@@ -103,7 +103,7 @@ public:
         Q_device(c, e) = Q_ref[e];
       }
     };
-    Kokkos::parallel_for("set initial condition boundary", Kokkos::RangePolicy(grid.boundaryCellsStart(), grid.boundaryCellsEnd()), update_boundary);
+    Kokkos::parallel_for("set initial condition boundary", Kokkos::RangePolicy<>(grid.boundaryCellsStart(), grid.boundaryCellsEnd()), update_boundary);
 
     auto update_interior = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
@@ -130,7 +130,7 @@ public:
         }
     };
 
-    Kokkos::parallel_for("setBCs", Kokkos::RangePolicy(boundary_cell_start, boundary_cell_end), set);
+    Kokkos::parallel_for("setBCs", Kokkos::RangePolicy<>(boundary_cell_start, boundary_cell_end), set);
   }
 
   double calcNorm(const SolutionArray<NumEqns> &A_in) {

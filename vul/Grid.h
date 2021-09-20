@@ -58,9 +58,8 @@ public:
       return num_total_cells;
   }
 
-KOKKOS_FUNCTION std::pair<vul::CellType, int>
+KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int>
 cellIdToTypeAndIndexPair(int cell_id) const {
-  int orig_cell_id = cell_id;
   if (cell_id < numTets())
     return {TET, cell_id};
   cell_id -= numTets();

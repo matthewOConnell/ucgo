@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(Kokkos_ENABLE_SERIAL "Enable Kokkos Serial backend" ON)
 if (Kokkos_ENABLE_CUDA)
   option(Kokkos_ENABLE_CUDA_LAMBDA "Enable CUDA Lambda support" ON)
-  option(Kokkos_ENABLE_CUDA_CONSTEXPR "Enable CUDA constexpr support" ON)
 endif()
 
 if (NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/Kokkos)
