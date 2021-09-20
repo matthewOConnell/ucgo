@@ -1,0 +1,60 @@
+variables:
+  K_HEAD_NODE: K4-li2
+  K_CI_DIRECTORY: "/hpnobackup1/fun3d/ucgo-ci"
+
+stages:
+  - Build
+  - Cleanup
+
+OSX-apple-clang:
+    interruptible: true
+    only:
+        - merge_requests
+    variables:
+        GIT_STRATEGY: fetch
+    tags:
+        - mac
+    stage: Build
+    script:
+        - rm -rf Kokkos
+        - git clone https://github.com/kokkos/kokkos.git Kokkos
+        - rm -rf build
+        - mkdir build
+        - cd build
+        - cmake -DCMAKE_INSTALL_PREFIX=$PWD ..
+        - make -j4
+        - ./test/unit/UnitTests
+
+K-build:
+    interruptible: true
+    stage: Build
+    only:
+        - merge_requests
+    tags:
+        - gitlab_runner
+    script:
+        - export TERM=xterm-256color
+        - ssh -tt -o StrictHostKeyChecking=no -o LogLevel=error fun3d@${K_HEAD_NODE} "cd ${K_CI_DIRECTORY} &&
+            rm -rf ${CI_PIPELINE_ID} && mkdir ${CI_PIPELINE_ID} &&
+            cd ${CI_PIPELINE_ID} &&
+              echo ${CI_REPOSITORY_URL} &&
+              pwd &&
+              git clone ${CI_REPOSITORY_URL} ucgo &&
+              cd ucgo && git merge --allow-unrelated-histories ${CI_COMMIT_SHA} && git status &&
+              ./misc/build_k.sh"
+
+
+Cleanup-pipeline:
+  interruptible: true
+  only:
+    - merge_requests
+  tags:
+    - gitlab_runner
+  stage: Cleanup
+  variables:
+      GIT_STRATEGY: none
+  script:
+      - ssh -o StrictHostKeyChecking=no -o LogLevel=error fun3d@${K_HEAD_NODE} "
+        mv ${K_CI_DIRECTORY}/${CI_PIPELINE_ID} ${K_CI_DIRECTORY}/${CI_PIPELINE_ID}.DELETEME &&
+        nohup rm -rf ${K_CI_DIRECTORY}/${CI_PIPELINE_ID}.DELETEME &"
+  when: always

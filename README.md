@@ -21,6 +21,12 @@ cmake ..
 make -j
 ```
 
+To build on the NASA NAS Pleiades cluster:
+```
+./misc/build_nas.sh
+```
+
+
 Execution:
 ----------
 The code can auto-generate a cartesian grid in a unit cube:
