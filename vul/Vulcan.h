@@ -39,9 +39,10 @@ public:
   void updateQ() const {
     auto Q_device = Q.d_view;
     auto R_device = R.d_view;
+    auto dt_device = dt;
     auto update = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q_device(c, e) = Q_device(c, e) - dt * R_device(c, e);
+        Q_device(c, e) = Q_device(c, e) - dt_device * R_device(c, e);
         R_device(c, e) = 0.0;
       }
     };
