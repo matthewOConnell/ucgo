@@ -155,7 +155,7 @@ public:
       QG_device(c, 1) = press;
     };
 
-    Kokkos::parallel_for(grid.numCells(), calc);
+    Kokkos::parallel_for("calcGasVariables", grid.numCells(), calc);
     Kokkos::deep_copy(QG.h_view, QG.d_view);
   }
 };

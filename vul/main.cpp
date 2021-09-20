@@ -43,8 +43,11 @@ void solve(const std::vector<std::string> &args) {
   }
 
   vul::Vulcan<5, 2> vulcan(*grid);
+  Kokkos::Profiling::popRegion();
   int num_iterations = 10;
+  Kokkos::Profiling::pushRegion("solve");
   vulcan.solve(num_iterations);
+  Kokkos::Profiling::popRegion();
 }
 
 void printLegalStatement() {
@@ -87,6 +90,7 @@ int main(int num_args, const char *args[]) {
   Kokkos::Cuda::print_configuration(msg);
 #endif
   std::cout << msg.str() << std::endl;
+  Kokkos::Profiling::pushRegion("setup");
 
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/";
