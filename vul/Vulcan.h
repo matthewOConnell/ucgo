@@ -104,16 +104,18 @@ public:
     calcGasVariables();
   }
   void setBCs() {
-    auto set = KOKKOS_CLASS_LAMBDA(int c) {
-      auto [type, index] = grid.cellIdToTypeAndIndexPair(c);
-      if (type == vul::TRI or type == vul::QUAD) {
+
+    auto Q_device = Q.d_view;
+    auto Q_ref = Q_reference; // make a local copy to be transferred to the GPU
+    int boundary_cell_start = grid.boundaryCellsStart();
+    int boundary_cell_end = grid.boundaryCellsEnd();
+    auto set = KOKKOS_LAMBDA(int c) {
         for (int e = 0; e < NumEqns; e++) {
-          Q.d_view(c, e) = Q_reference[e];
+          Q_device(c, e) = Q_ref[e];
         }
-      }
     };
 
-    Kokkos::parallel_for(grid.numCells(), set);
+    Kokkos::parallel_for("setBCs", Kokkos::RangePolicy(boundary_cell_start, boundary_cell_end), set);
   }
 
   double calcNorm(const SolutionArray<NumEqns> &A_in) {

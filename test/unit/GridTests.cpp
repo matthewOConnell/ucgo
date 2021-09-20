@@ -28,6 +28,20 @@ TEST_CASE("Can automatically generate a cartesian grid"){
   REQUIRE(top_corner_exists);
 }
 
+TEST_CASE("Grid can report first instance of a boundary cell"){
+  int num_cells_x = 2;
+  int num_cells_y = 3;
+  int num_cells_z = 4;
+  // -- generate a cartesian hex grid
+  auto grid = vul::Grid(num_cells_x, num_cells_y, num_cells_z);
+  int num_hexs = grid.count(vul::HEX);
+  int num_quads = grid.count(vul::QUAD);
+  int cell_start = grid.boundaryCellsStart();
+  int cell_end = grid.boundaryCellsEnd();
+  REQUIRE(cell_start == num_hexs);
+  REQUIRE(cell_end == num_hexs + num_quads);
+}
+
 TEST_CASE("Can read primal data from a ugrid") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/ramp.lb8.ugrid";

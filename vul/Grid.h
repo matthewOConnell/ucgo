@@ -49,6 +49,15 @@ public:
 
   Vec2D<int> getCellArray(CellType type);
 
+  KOKKOS_FUNCTION int boundaryCellsStart() const{
+      int num_volume_cells = numTets() + numPyramids() + numPrisms() + numHexs();
+      return num_volume_cells;
+  }
+  KOKKOS_FUNCTION int boundaryCellsEnd() const{
+      int num_total_cells = numTets() + numPyramids() + numPrisms() + numHexs() + numTris() + numQuads();
+      return num_total_cells;
+  }
+
 KOKKOS_FUNCTION std::pair<vul::CellType, int>
 cellIdToTypeAndIndexPair(int cell_id) const {
   int orig_cell_id = cell_id;
