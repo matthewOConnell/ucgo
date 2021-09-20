@@ -1,8 +1,22 @@
-//Copyright 2021 United States Government as represented by the Administrator of the National Aeronautics and Space Administration. No copyright is claimed in the United States under Title 17, U.S. Code. All Other Rights Reserved.
-//Third Party Software:
-//This software calls the following third party software, which is subject to the terms and conditions of its licensor, as applicable at the time of licensing.  Third party software is not bundled with this software, but may be available from the licensor.  License hyperlinks are provided here for information purposes only:  Kokkos v3.0, 3-clause BSD license, https://github.com/kokkos/kokkos, under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this third-party software.
-//The Unstructured CFD graph operations miniapp platform is licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0. 
-//Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+// Copyright 2021 United States Government as represented by the Administrator
+// of the National Aeronautics and Space Administration. No copyright is claimed
+// in the United States under Title 17, U.S. Code. All Other Rights Reserved.
+// Third Party Software:
+// This software calls the following third party software, which is subject to
+// the terms and conditions of its licensor, as applicable at the time of
+// licensing.  Third party software is not bundled with this software, but may
+// be available from the licensor.  License hyperlinks are provided here for
+// information purposes only:  Kokkos v3.0, 3-clause BSD license,
+// https://github.com/kokkos/kokkos, under the terms of Contract DE-NA0003525
+// with NTESS, the U.S. Government retains certain rights in this third-party
+// software. The Unstructured CFD graph operations miniapp platform is licensed
+// under the Apache License, Version 2.0 (the "License"); you may not use this
+// file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0. Unless required by
+// applicable law or agreed to in writing, software distributed under the
+// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, either express or implied. See the License for the specific
+// language governing permissions and limitations under the License.
 #pragma once
 #include "PerfectGas.h"
 #include "Point.h"
@@ -20,13 +34,19 @@ struct EquationIndex {
 
 class LDFSSFlux {
 public:
+  KOKKOS_INLINE_FUNCTION static double min(double a, double b) {
+    return (a > b) ? b : a;
+  }
+  KOKKOS_INLINE_FUNCTION static double max(double a, double b) {
+    return (a < b) ? b : a;
+  }
+
   KOKKOS_INLINE_FUNCTION static double calcBeta(double mach) {
     mach = int(std::abs(mach));
-    return -std::max(0.0, 1.0 - int(mach));
+    return -max(0.0, 1.0 - int(mach));
   }
   template <size_t N, size_t NG>
-  KOKKOS_FUNCTION 
-  static StaticArray<N>
+  KOKKOS_FUNCTION static StaticArray<N>
   inviscidFlux(const StaticArray<N> &ql, const StaticArray<N> qr,
                const StaticArray<NG> &qgl, const StaticArray<NG> &qgr,
                Point<double> face_area) {
@@ -93,7 +113,7 @@ public:
     // NOTE: the extra steps are put here to preserve the linearization accuracy
     // in near-zero velocity flow
     double mach_average = 0.5 * (mach_l * mach_l + mach_r * mach_r);
-    mach_average        = std::max(mach_average, 0.0);
+    mach_average        = max(mach_average, 0.0);
     mach_average        = sqrt(mach_average);
 
     double mach_interface =
@@ -104,7 +124,7 @@ public:
 
     // Magic from VULCAN
     const double pi = 4.0 * atan(1.0);
-    double xmfunct  = sin(0.5 * pi * std::min(mach_average, 1.0));
+    double xmfunct  = sin(0.5 * pi * min(mach_average, 1.0));
     double btfunct  = 0.25 * (mach_l - mach_r - fabs(mach_l - mach_r));
     double fact     = (-0.5 > btfunct ? -0.5 : btfunct) * xmfunct;
 
@@ -137,8 +157,10 @@ public:
     flux[EQ.z_momentum] = mass_flux_l * wl + mass_flux_r * wr +
                           pressure_flux_sum * face_area.z * area;
 
-    auto total_energy_l = perfect_gas::calcTotalEnergy(density_l, ul, vl, wl, pressure_l, gamma_l);
-    auto total_energy_r = perfect_gas::calcTotalEnergy(density_r, ur, vr, wr, pressure_r, gamma_r);
+    auto total_energy_l = perfect_gas::calcTotalEnergy(density_l, ul, vl, wl,
+                                                       pressure_l, gamma_l);
+    auto total_energy_r = perfect_gas::calcTotalEnergy(density_r, ur, vr, wr,
+                                                       pressure_r, gamma_r);
 
     double enthalpy_l = (total_energy_l + pressure_l) / density_l;
     double enthalpy_r = (total_energy_r + pressure_r) / density_r;
