@@ -30,11 +30,16 @@ public:
       calcGasVariables();
 
       if(plot_freq > 0 and n % plot_freq == 0){
-        Kokkos::deep_copy(Q.h_view, Q.d_view);
-        Kokkos::deep_copy(QG.h_view, QG.d_view);
+        syncToHost();
         writeCSV("output." + std::to_string(n) + ".csv");
       }
     }
+  }
+
+  void syncToHost() {
+    Kokkos::deep_copy(Q.h_view, Q.d_view);
+    Kokkos::deep_copy(QG.h_view, QG.d_view);
+    Kokkos::deep_copy(R.h_view, R.d_view);
   }
   void updateQ() const {
     auto Q_device = Q.d_view;
@@ -156,7 +161,6 @@ public:
     };
 
     Kokkos::parallel_for("calcGasVariables", grid.numCells(), calc);
-    Kokkos::deep_copy(QG.h_view, QG.d_view);
   }
 };
 } // namespace vul
