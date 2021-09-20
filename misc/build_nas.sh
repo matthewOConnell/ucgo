@@ -33,7 +33,10 @@ build_gpu() {
 }
 
 module purge
-module load gpu_tools/1.2_nvcc
+module use /swbuild/tsa/modulefiles
+module use /swbuild/kbthomp1/modulefiles
+module load gcc/8.2 cuda/11.2.2 cmake/3.17.5
+module list
 
 if [[ ! -d Kokkos ]]; then
   git clone https://github.com/kokkos/kokkos.git Kokkos
