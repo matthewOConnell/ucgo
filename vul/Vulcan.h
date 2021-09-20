@@ -142,7 +142,7 @@ public:
       }
     };
 
-    Kokkos::parallel_reduce(grid.numVolumeCells(), calc_norm, norm);
+    Kokkos::parallel_reduce("calc R norm", grid.numVolumeCells(), calc_norm, norm);
     norm = sqrt(norm);
     return norm;
   }
