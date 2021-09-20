@@ -15,8 +15,8 @@
 namespace vul {
 template <size_t NumEqns, size_t NumGasVars> class Vulcan {
 public:
-  Vulcan(std::string filename)
-      : grid(filename), residual(&grid), Q("solution", grid.numCells()),
+  Vulcan(const vul::Grid& grid)
+      : grid(grid), residual(&grid), Q("solution", grid.numCells()),
         QG("gas-variables", grid.numCells()), R("residual", grid.numCells()) {
     setInitialConditions();
   }
