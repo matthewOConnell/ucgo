@@ -800,7 +800,7 @@ void vul::Grid::setCartesianPoints(int n_cells_x, int n_cells_y,
   for (int n = 0; n < points.extent_int(0); n++) {
     auto p = block.getPoint(n);
     for (int i = 0; i < 3; i++)
-      points.h_view(n, 0) = p.pos[i];
+      points.h_view(n, i) = p.pos[i];
   }
   Kokkos::deep_copy(points.d_view, points.h_view);
 }

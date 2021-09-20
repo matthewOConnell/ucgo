@@ -12,6 +12,20 @@ TEST_CASE("Can automatically generate a cartesian grid"){
   REQUIRE(grid.count(vul::PRISM) == 0);
   REQUIRE(grid.count(vul::HEX) == 8);
   REQUIRE(grid.count(vul::FACE) == 24 + 12);
+  for(int h = 0; h < grid.count(vul::HEX); h++){
+    REQUIRE(grid.cell_volume.h_view(h) == 1.0 / 8.0);
+  }
+  bool bot_corner_exists = false;
+  bool top_corner_exists = false;
+  for(int n = 0; n < grid.numPoints(); n++){
+    auto p = grid.getPoint(n);
+    if(p.x == doctest::Approx(0.0) and p.y == doctest::Approx(0.0) and p.z == doctest::Approx(0.0))
+      bot_corner_exists = true;
+    if(p.x == doctest::Approx(1.0) and p.y == doctest::Approx(1.0) and p.z == doctest::Approx(1.0))
+      top_corner_exists = true;
+  }
+  REQUIRE(bot_corner_exists);
+  REQUIRE(top_corner_exists);
 }
 
 TEST_CASE("Can read primal data from a ugrid") {
@@ -55,7 +69,6 @@ TEST_CASE("Can build faces from a ugrid") {
 
   REQUIRE(grid.count(vul::FACE) == 501);
   REQUIRE(grid.face_area.h_view(0, 2) == -0.001);
-  grid.printSummary();
 }
 
 TEST_CASE("vul::Cell exists") {
