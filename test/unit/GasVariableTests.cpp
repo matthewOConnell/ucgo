@@ -1,4 +1,4 @@
-#include <doctest.h>
+#include <catch.hpp>
 #include <vul/Solution.h>
 #include <vul/PerfectGas.h>
 
@@ -15,5 +15,5 @@ TEST_CASE("Can compute gas variables from state") {
 
   vul::StaticArray<5> q{density, density*u, density*v, density*w, total_energy};
   double calc_press = vul::perfect_gas::calcPressure(q, gamma);
-  REQUIRE(pressure == doctest::Approx(calc_press));
+  REQUIRE(pressure == Approx(calc_press));
 }

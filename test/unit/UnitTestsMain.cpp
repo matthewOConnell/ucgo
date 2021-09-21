@@ -1,29 +1,19 @@
-#define DOCTEST_CONFIG_IMPLEMENT
-#include <doctest.h>
+#define CATCH_CONFIG_CONSOLE_WIDTH 300
+#define CATCH_CONFIG_RUNNER
 #include <Kokkos_Core.hpp>
+#include <catch.hpp>
 
-int main(int argc, char** argv) {
-    doctest::Context context;
+int main(int argc, char* argv[]) {
+  Kokkos::InitArguments arguments;
+  arguments.disable_warnings = true;
+  Kokkos::initialize(arguments);
 
-    Kokkos::InitArguments arguments;
-    arguments.disable_warnings = true;
-    Kokkos::initialize(arguments);
-
-    std::ostringstream msg;
+  std::ostringstream msg;
 #if defined(__CUDACC__)
-    Kokkos::Cuda::print_configuration(msg);
+  Kokkos::Cuda::print_configuration(msg);
 #endif
-    std::cout << msg.str() << std::endl;
-
-    int res = context.run(); // run
-
-    if(context.shouldExit()) // important - query flags (and --exit) rely on the user doing this
-        return res;          // propagate the result of the tests
-
-    int client_stuff_return_code = 0;
-    // your program - if the testing framework is integrated in your production code
-
-    Kokkos::finalize();
-
-    return res + client_stuff_return_code; // the result from doctest is propagated here as well
+  std::cout << msg.str() << std::endl;
+  int result = Catch::Session().run(argc, argv);
+  Kokkos::finalize();
+  return (result < 0xff ? result : 0xff);
 }

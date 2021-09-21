@@ -1,4 +1,4 @@
-#include <doctest.h>
+#include <catch.hpp>
 #include <vul/Solution.h>
 
 TEST_CASE("Compute norm of array"){

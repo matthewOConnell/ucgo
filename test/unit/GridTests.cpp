@@ -1,5 +1,4 @@
-#include <VectorStringMaker.h>
-#include <doctest.h>
+#include <catch.hpp>
 #include <string>
 #include <vul/Grid.h>
 
@@ -19,9 +18,9 @@ TEST_CASE("Can automatically generate a cartesian grid"){
   bool top_corner_exists = false;
   for(int n = 0; n < grid.numPoints(); n++){
     auto p = grid.getPoint(n);
-    if(p.x == doctest::Approx(0.0) and p.y == doctest::Approx(0.0) and p.z == doctest::Approx(0.0))
+    if(p.x == Approx(0.0) and p.y == Approx(0.0) and p.z == Approx(0.0))
       bot_corner_exists = true;
-    if(p.x == doctest::Approx(1.0) and p.y == doctest::Approx(1.0) and p.z == doctest::Approx(1.0))
+    if(p.x == Approx(1.0) and p.y == Approx(1.0) and p.z == Approx(1.0))
       top_corner_exists = true;
   }
   REQUIRE(bot_corner_exists);

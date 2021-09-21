@@ -1,5 +1,5 @@
 #include <cmath>
-#include <doctest.h>
+#include <catch.hpp>
 #include <vul/Point.h>
 
 TEST_CASE("Points can be accessed with x,y,z or pos[0:3]") {
