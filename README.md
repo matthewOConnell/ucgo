@@ -2,8 +2,6 @@ UCGO
 ----
 Unstructured CFD Graph Operations.
 
-nudge
-
 Third Party:
 ------------
 After git clone. Please copy the Kokkos directory into the top level.
