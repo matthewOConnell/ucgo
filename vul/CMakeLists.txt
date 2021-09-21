@@ -1,6 +1,7 @@
 
 
 set(headers
+        CompressedRowGraph.h
         Flux.h
         Macros.h
         Grid.h

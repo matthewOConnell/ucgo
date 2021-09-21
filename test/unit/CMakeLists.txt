@@ -7,6 +7,7 @@ set(test_sources
         GasVariableTests.cpp
         LDFSSFluxTests.cpp
         PointTests.cpp
+        CompressedRowGraph.cpp
         )
 
 add_executable(UnitTests UnitTestsMain.cpp ${test_sources})
