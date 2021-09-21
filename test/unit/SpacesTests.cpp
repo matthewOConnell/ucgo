@@ -4,18 +4,42 @@
 #include <string>
 #include <vector>
 
+
+template <typename View1, typename View2>
+void for_real_copy(View1 to, View2 from){
+    using WriteSpace = typename View1::memory_space;
+    using ReadSpace = typename View2::memory_space;
+    using HostSpace = Kokkos::DefaultHostExecutionSpace::memory_space;
+    using DeviceSpace = Kokkos::DefaultExecutionSpace::memory_space;
+    // same to same
+    if(std::is_same<ReadSpace, WriteSpace>::value){
+      Kokkos::deep_copy(to, from);
+      return;
+    } 
+    // host to device
+    if(std::is_same<WriteSpace, DeviceSpace>::value){
+      auto mirror = create_mirror_view(to);
+      Kokkos::deep_copy(mirror, from); 
+      Kokkos::deep_copy(to, mirror);
+      return;
+    }
+    // device to host
+    if(std::is_same<WriteSpace, HostSpace>::value){
+      auto mirror = create_mirror_view(from);
+      Kokkos::deep_copy(mirror, from); 
+      Kokkos::deep_copy(to, mirror); 
+      return;
+    }
+    printf("You should not be here.\n");
+}
+
 template<typename Space>
 class Grid {
 public:
   template <typename OtherSpace>
   Grid(const Grid<OtherSpace>& rhs){
-    if(std::is_same<OtherSpace, Space>::value){
-      Kokkos::deep_copy(points, rhs.points);
-    } else {
-      auto points_host_mirror = create_mirror_view(rhs.points);
-      Kokkos::deep_copy(points_host_mirror, rhs.points); // from device to mirror
-      Kokkos::deep_copy(points, points_host_mirror); // from mirror to host
-    }
+      points = Kokkos::View<double*[3], Space>("points_gpu", rhs.points.extent(0));
+      for_real_copy(points, rhs.points);
   }
   Grid(int num_points) : points("points", num_points){
     Kokkos::DualView<double* [3]> my_points;
@@ -41,11 +65,9 @@ void go(){
   auto grid_1 = Grid<Host>(num_points);
   auto grid_2 = Grid<Device>(grid_1);
 
-  printf("Type %s\n", typeid(decltype(grid_1.points)).name());
-
   double norm    = 0.0;
   auto calc_norm = KOKKOS_LAMBDA(int n, double &norm) {
-      norm += grid_1.mag(n);
+      norm += grid_2.mag(n);
   };
   Kokkos::parallel_reduce("norm", num_points, calc_norm, norm);
   printf("norm = %e\n", norm);
