@@ -473,7 +473,7 @@ std::vector<std::vector<int>> vul::Grid::buildFaceNeighbors() {
 
 void vul::Grid::buildFaces() {
   Kokkos::Profiling::pushRegion("buildFaces");
-  node_to_cell        = buildNodeToCell();
+  node_to_cell = CompressedRowGraph(buildNodeToCell());
   cell_face_neighbors = buildFaceNeighbors();
 
   {
@@ -586,17 +586,17 @@ inline bool isIn(const Container &container, T t) {
 std::vector<int>
 vul::Grid::getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
                                   int cell_id) {
-  // This is convoluted for better performance, The original implementation used
-  // std::set, which was ~4x slower.
   int neighbor_count = 0;
   for (int node : cell_nodes) {
-    neighbor_count += node_to_cell.at(node).size();
+    int row_length = node_to_cell.rows.h_view(node+1) - node_to_cell.rows.h_view(node);
+    neighbor_count += row_length;
   }
 
   std::vector<int> neighbors;
   neighbors.reserve(neighbor_count);
   for (int node : cell_nodes) {
-    for (int c : node_to_cell[node]) {
+    for(int i = node_to_cell.rows.h_view(node); i < node_to_cell.rows.h_view(node+1); i++){
+      int c = node_to_cell.cols.h_view(i);
       if (c != cell_id and not isIn(neighbors, c)) {
         neighbors.push_back(c);
       }

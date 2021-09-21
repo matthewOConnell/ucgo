@@ -6,7 +6,9 @@ namespace vul {
 
 class CompressedRowGraph {
 public:
-  CompressedRowGraph(const std::vector<std::vector<int>> &graph) {
+  CompressedRowGraph() = default;
+  template<typename SubContainer>
+  CompressedRowGraph(const std::vector<SubContainer> &graph) {
     long num_non_zero = 0;
     for (auto &row : graph) {
       num_non_zero += row.size();

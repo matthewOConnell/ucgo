@@ -11,6 +11,7 @@
 #include <set>
 #include <string>
 #include "Solution.h"
+#include "CompressedRowGraph.h"
 
 namespace vul {
 enum CellType { TRI, QUAD, TET, PYRAMID, PRISM, HEX, FACE };
@@ -119,7 +120,7 @@ public:
   FaceToCells face_to_cell;
 
   std::vector<std::vector<int>> cell_face_neighbors;
-  std::vector<std::set<int>> node_to_cell;
+  CompressedRowGraph node_to_cell;
 
   void readPoints(FILE *fp);
   void readCells(FILE *fp);
