@@ -214,6 +214,7 @@ private:
 };
 
 vul::Grid::Grid(int n_cells_x, int n_cells_y, int n_cells_z) {
+  Kokkos::Profiling::pushRegion("Cartesian Grid Generation");
   int num_nodes_x = n_cells_x + 1;
   int num_nodes_y = n_cells_y + 1;
   int num_nodes_z = n_cells_z + 1;
@@ -239,6 +240,7 @@ vul::Grid::Grid(int n_cells_x, int n_cells_y, int n_cells_z) {
 
   setCartesianPoints(n_cells_x, n_cells_y, n_cells_z);
   setCartesianCells(n_cells_x, n_cells_y, n_cells_z);
+  Kokkos::Profiling::popRegion();
 
   buildFaces();
   computeCellVolumes();
@@ -470,6 +472,7 @@ std::vector<std::vector<int>> vul::Grid::buildFaceNeighbors() {
 }
 
 void vul::Grid::buildFaces() {
+  Kokkos::Profiling::pushRegion("buildFaces");
   node_to_cell        = buildNodeToCell();
   cell_face_neighbors = buildFaceNeighbors();
 
@@ -505,6 +508,7 @@ void vul::Grid::buildFaces() {
   }
   Kokkos::deep_copy(face_to_cell.d_view, face_to_cell.h_view);
   Kokkos::deep_copy(face_area.d_view, face_area.h_view);
+  Kokkos::Profiling::popRegion();
 }
 void vul::Grid::getCell(int cell_id, std::vector<int> &cell_nodes) const {
   cell_nodes.resize(cellLength(cell_id));
