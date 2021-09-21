@@ -118,6 +118,13 @@ TEST_CASE("vul::Cell exists") {
   REQUIRE(qua.face(0) == std::vector<int>{3, 2, 1, 0});
 }
 
+TEST_CASE("Can compute grid metrics of single cartesian hex"){
+  auto grid = vul::Grid(1,1,1);
+  REQUIRE(grid.getCellCentroid(0).x == Approx(0.5));
+  REQUIRE(grid.getCellCentroid(0).y == Approx(0.5));
+  REQUIRE(grid.getCellCentroid(0).z == Approx(0.5));
+}
+
 TEST_CASE("Can compute grid metrics") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
@@ -133,6 +140,8 @@ TEST_CASE("Can compute grid metrics") {
   REQUIRE(grid.cell_volume.h_view(1) == 1.0 / 6.0);  // pyramid
   REQUIRE(grid.cell_volume.h_view(2) == 0.1);        // prism
   REQUIRE(grid.cell_volume.h_view(3) == 1.0);        // hex
+
+  REQUIRE(grid.cell_centroids.extent_int(0) == grid.numCells());
 }
 
 TEST_CASE("Can convert to inf ordering") {

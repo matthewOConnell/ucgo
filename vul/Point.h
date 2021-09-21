@@ -23,6 +23,11 @@ public:
     return Point<T>{x/m, y/m, z/m};
   }
 
+  KOKKOS_FUNCTION bool approxEqual(const Point<T>& rhs, double tol = 1.0e-12) const{
+    auto diff = *this - rhs;
+    return diff.magnitude() < tol;
+  }
+
   KOKKOS_FUNCTION static T dot(const Point<T>& v1, const Point<T>&v2){
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
   }

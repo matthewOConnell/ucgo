@@ -244,6 +244,7 @@ vul::Grid::Grid(int n_cells_x, int n_cells_y, int n_cells_z) {
 
   buildFaces();
   computeCellVolumes();
+  computeCellCentroids();
 }
 
 vul::Grid::Grid(std::string filename) {
@@ -276,6 +277,7 @@ vul::Grid::Grid(std::string filename) {
 
   buildFaces();
   computeCellVolumes();
+  computeCellCentroids();
 }
 
 void vul::Grid::readPoints(FILE *fp) {
@@ -473,7 +475,7 @@ std::vector<std::vector<int>> vul::Grid::buildFaceNeighbors() {
 
 void vul::Grid::buildFaces() {
   Kokkos::Profiling::pushRegion("buildFaces");
-  node_to_cell = CompressedRowGraph(buildNodeToCell());
+  node_to_cell        = CompressedRowGraph(buildNodeToCell());
   cell_face_neighbors = buildFaceNeighbors();
 
   {
@@ -588,14 +590,16 @@ vul::Grid::getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
                                   int cell_id) {
   int neighbor_count = 0;
   for (int node : cell_nodes) {
-    int row_length = node_to_cell.rows.h_view(node+1) - node_to_cell.rows.h_view(node);
+    int row_length =
+        node_to_cell.rows.h_view(node + 1) - node_to_cell.rows.h_view(node);
     neighbor_count += row_length;
   }
 
   std::vector<int> neighbors;
   neighbors.reserve(neighbor_count);
   for (int node : cell_nodes) {
-    for(int i = node_to_cell.rows.h_view(node); i < node_to_cell.rows.h_view(node+1); i++){
+    for (int i = node_to_cell.rows.h_view(node);
+         i < node_to_cell.rows.h_view(node + 1); i++) {
       int c = node_to_cell.cols.h_view(i);
       if (c != cell_id and not isIn(neighbors, c)) {
         neighbors.push_back(c);
@@ -811,9 +815,9 @@ void vul::Grid::setCartesianPoints(int n_cells_x, int n_cells_y,
 void vul::Grid::setCartesianCells(int n_cells_x, int n_cells_y, int n_cells_z) {
   CartBlock block(n_cells_x, n_cells_y, n_cells_z);
   // set hexs
-  for(int c = 0; c < hexs.extent_int(0); c++){
+  for (int c = 0; c < hexs.extent_int(0); c++) {
     auto h = block.getNodesInCell(c);
-    for(int i = 0; i < 8; i++){
+    for (int i = 0; i < 8; i++) {
       hexs.h_view(c, i) = h[i];
     }
   }
@@ -821,70 +825,73 @@ void vul::Grid::setCartesianCells(int n_cells_x, int n_cells_y, int n_cells_z) {
   // set quads
   // bottom
   int quad_index = 0;
-  for(int i = 0; i < n_cells_x; i++){
-    for(int j = 0; j < n_cells_y; j++){
-      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(i,  j,  0);
-      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(i,  j+1,0);
-      quads.h_view(quad_index, 2) = block.convert_ijk_ToNodeId(i+1,j+1,0);
-      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(i+1,j,  0);
+  for (int i = 0; i < n_cells_x; i++) {
+    for (int j = 0; j < n_cells_y; j++) {
+      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(i, j, 0);
+      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(i, j + 1, 0);
+      quads.h_view(quad_index, 2) = block.convert_ijk_ToNodeId(i + 1, j + 1, 0);
+      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(i + 1, j, 0);
       quad_tags.h_view(quad_index++) = 1;
     }
   }
 
   // top
   int num_z = n_cells_z;
-  for(int i = 0; i < n_cells_x; i++){
-    for(int j = 0; j < n_cells_y; j++){
-      quads.h_view(quad_index, 0) =block.convert_ijk_ToNodeId(i,  j,  num_z);
-      quads.h_view(quad_index, 1) =block.convert_ijk_ToNodeId(i+1,j,  num_z);
-      quads.h_view(quad_index, 2) =block.convert_ijk_ToNodeId(i+1,j+1,num_z);
-      quads.h_view(quad_index, 3) =block.convert_ijk_ToNodeId(i,  j+1,num_z);
+  for (int i = 0; i < n_cells_x; i++) {
+    for (int j = 0; j < n_cells_y; j++) {
+      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(i, j, num_z);
+      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(i + 1, j, num_z);
+      quads.h_view(quad_index, 2) =
+          block.convert_ijk_ToNodeId(i + 1, j + 1, num_z);
+      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(i, j + 1, num_z);
       quad_tags.h_view(quad_index++) = 6;
     }
   }
 
   // front
-  for(int j = 0; j < n_cells_y; j++){
-    for(int k = 0; k < n_cells_z; k++){
-      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(0,j,  k );
-      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(0,j,  k+1);
-      quads.h_view(quad_index, 2) = block.convert_ijk_ToNodeId(0,j+1,k+1);
-      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(0,j+1,k );
+  for (int j = 0; j < n_cells_y; j++) {
+    for (int k = 0; k < n_cells_z; k++) {
+      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(0, j, k);
+      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(0, j, k + 1);
+      quads.h_view(quad_index, 2) = block.convert_ijk_ToNodeId(0, j + 1, k + 1);
+      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(0, j + 1, k);
       quad_tags.h_view(quad_index++) = 2;
     }
   }
 
   // back
   int num_x = n_cells_x;
-  for(int j = 0; j < n_cells_y; j++){
-    for(int k = 0; k < n_cells_z; k++){
-      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(num_x,j,  k );
-      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(num_x,j+1,k );
-      quads.h_view(quad_index, 2) = block.convert_ijk_ToNodeId(num_x,j+1,k+1);
-      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(num_x,j,  k+1);
+  for (int j = 0; j < n_cells_y; j++) {
+    for (int k = 0; k < n_cells_z; k++) {
+      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(num_x, j, k);
+      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(num_x, j + 1, k);
+      quads.h_view(quad_index, 2) =
+          block.convert_ijk_ToNodeId(num_x, j + 1, k + 1);
+      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(num_x, j, k + 1);
       quad_tags.h_view(quad_index++) = 4;
     }
   }
 
   // right
-  for(int i = 0; i < n_cells_x; i++){
-    for(int k = 0; k < n_cells_z; k++){
-      quads.h_view(quad_index, 0)= block.convert_ijk_ToNodeId(i,  0, k );
-      quads.h_view(quad_index, 1)= block.convert_ijk_ToNodeId(i+1,0, k );
-      quads.h_view(quad_index, 2)= block.convert_ijk_ToNodeId(i+1,0, k+1);
-      quads.h_view(quad_index, 3)= block.convert_ijk_ToNodeId(i,  0, k+1);
+  for (int i = 0; i < n_cells_x; i++) {
+    for (int k = 0; k < n_cells_z; k++) {
+      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(i, 0, k);
+      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(i + 1, 0, k);
+      quads.h_view(quad_index, 2) = block.convert_ijk_ToNodeId(i + 1, 0, k + 1);
+      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(i, 0, k + 1);
       quad_tags.h_view(quad_index++) = 3;
     }
   }
 
   // left
   int num_y = n_cells_y;
-  for(int i = 0; i < n_cells_x; i++){
-    for(int k = 0; k < n_cells_z; k++){
-      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(i,  num_y, k );
-      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(i,  num_y, k+1);
-      quads.h_view(quad_index, 2) = block.convert_ijk_ToNodeId(i+1,num_y, k+1);
-      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(i+1,num_y, k );
+  for (int i = 0; i < n_cells_x; i++) {
+    for (int k = 0; k < n_cells_z; k++) {
+      quads.h_view(quad_index, 0) = block.convert_ijk_ToNodeId(i, num_y, k);
+      quads.h_view(quad_index, 1) = block.convert_ijk_ToNodeId(i, num_y, k + 1);
+      quads.h_view(quad_index, 2) =
+          block.convert_ijk_ToNodeId(i + 1, num_y, k + 1);
+      quads.h_view(quad_index, 3) = block.convert_ijk_ToNodeId(i + 1, num_y, k);
       quad_tags.h_view(quad_index++) = 5;
     }
   }
@@ -896,6 +903,30 @@ void vul::Grid::setCartesianCells(int n_cells_x, int n_cells_y, int n_cells_z) {
   Kokkos::deep_copy(pyramids.d_view, pyramids.h_view);
   Kokkos::deep_copy(prisms.d_view, prisms.h_view);
   Kokkos::deep_copy(hexs.d_view, hexs.h_view);
+}
+void vul::Grid::computeCellCentroids() {
+  cell_centroids = PointVector<double>("cell_centroids", numCells());
+  std::vector<int> cell_nodes;
+  for (int c = 0; c < numCells(); c++) {
+    getCell(c, cell_nodes);
+    Point<double> centroid = {0, 0, 0};
+    for (int n : cell_nodes) {
+      auto p   = getPoint(n);
+      centroid = centroid + p;
+    }
+    centroid = centroid * (1.0 / double(cell_nodes.size()));
+    for (int i = 0; i < 3; i++) {
+      cell_centroids.h_view(c, i) = centroid.pos[i];
+    }
+  }
+  Kokkos::deep_copy(cell_centroids.d_view, cell_centroids.h_view);
+}
+vul::Point<double> vul::Grid::getCellCentroid(int i) {
+  vul::Point<double> p;
+  p.x = cell_centroids.h_view(i, 0);
+  p.y = cell_centroids.h_view(i, 1);
+  p.z = cell_centroids.h_view(i, 2);
+  return p;
 }
 std::vector<int> vul::Cell::face(int i) const {
   std::vector<int> face;

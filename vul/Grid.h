@@ -118,6 +118,7 @@ public:
   Vec1D<int> quad_tags;
   Vec1D<double> cell_volume;
   FaceToCells face_to_cell;
+  PointVector<double> cell_centroids;
 
   std::vector<std::vector<int>> cell_face_neighbors;
   CompressedRowGraph node_to_cell;
@@ -149,6 +150,8 @@ public:
   double computeHexVolume(int p);
   void setCartesianPoints(int n_cells_x, int n_cells_y, int n_cells_z);
   void setCartesianCells(int n_cells_x, int n_cells_y, int n_cells_z);
+  void computeCellCentroids();
+  vul::Point<double> getCellCentroid(int i);
 };
 
 } // namespace vul

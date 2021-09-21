@@ -6,6 +6,7 @@ set(test_sources
         GridTests.cpp
         GasVariableTests.cpp
         LDFSSFluxTests.cpp
+        LeastSquaresTests.cpp
         PointTests.cpp
         CompressedRowGraph.cpp
         )
