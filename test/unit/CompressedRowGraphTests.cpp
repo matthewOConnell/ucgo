@@ -1,5 +1,5 @@
 #include <catch.hpp>
-#include <vul/CompressedRowGraph.h>
+#include <vul/CompressedRowGraphTests.h>
 
 bool contains(const std::vector<int>& vector, int query){
   for(const auto& v : vector)
@@ -16,6 +16,7 @@ TEST_CASE("Can build a ragged array") {
   long num_rows = n2c.num_rows;
   REQUIRE(num_rows == node_to_cell.size());
   REQUIRE(n2c.cols.extent_int(0) == 10);
+  REQUIRE(n2c.num_non_zero == 10);
 
   auto rows = n2c.rows.h_view;
   auto cols = n2c.cols.h_view;

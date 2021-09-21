@@ -1,7 +1,9 @@
 
 
 set(headers
-        CompressedRowGraph.h
+        CompressedRowGraphTests.h
+        Decompositions.h
+        DynamicMatrix.h
         Flux.h
         Macros.h
         Grid.h

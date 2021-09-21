@@ -8,7 +8,7 @@ set(test_sources
         LDFSSFluxTests.cpp
         LeastSquaresTests.cpp
         PointTests.cpp
-        CompressedRowGraph.cpp
+        CompressedRowGraphTests.cpp
         )
 
 add_executable(UnitTests UnitTestsMain.cpp ${test_sources})

@@ -1,15 +1,15 @@
-#include <vector>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
+#include <vector>
 
 namespace vul {
 
 class CompressedRowGraph {
 public:
   CompressedRowGraph() = default;
-  template<typename SubContainer>
+  template <typename SubContainer>
   CompressedRowGraph(const std::vector<SubContainer> &graph) {
-    long num_non_zero = 0;
+    num_non_zero = 0;
     for (auto &row : graph) {
       num_non_zero += row.size();
     }
@@ -31,6 +31,7 @@ public:
 public:
   template <typename T> using Vec1D = Kokkos::DualView<T *>;
   long num_rows                     = 0;
+  long num_non_zero                 = 0;
   Vec1D<int> rows;
   Vec1D<int> cols;
 };
