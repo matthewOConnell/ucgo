@@ -12,7 +12,7 @@ public:
   template <typename OtherSpace>
   Grid(const Grid<OtherSpace>& rhs){
       points = Kokkos::View<double*[3], Space>("points_gpu", rhs.points.extent(0));
-      for_real_copy(points, rhs.points);
+      vul::force_copy(points, rhs.points);
   }
   Grid(int num_points) : points("points", num_points){
     Kokkos::DualView<double* [3]> my_points;
