@@ -4,6 +4,8 @@
 #include <vul/Grid.h>
 #include <vul/Macros.h>
 
+// Turn these tests for cuda backend until they are ready
+#ifndef KOKKOS_ENABLE_CUDA
 namespace vul {
 class LeastSquares {
 public:
@@ -127,3 +129,4 @@ TEST_CASE("Least squares weight calculation") {
       grad_mirror(n, 1), grad_mirror(n, 2));
     }
 }
+#endif
