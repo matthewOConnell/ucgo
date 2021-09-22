@@ -15,6 +15,6 @@ endif()
 add_subdirectory(Kokkos)
 add_subdirectory(vul)
 
-#if (NOT Kokkos_ENABLE_CUDA)
+if (NOT Kokkos_ENABLE_CUDA)
   add_subdirectory(test)
-#endif()
+endif()
