@@ -977,6 +977,9 @@ vul::Cell::Cell(vul::CellType type, const int *nodes) : _type(type) {
     cell_nodes = std::vector<int>{nodes[0], nodes[1], nodes[2], nodes[3],
                                   nodes[4], nodes[5], nodes[6], nodes[7]};
     return;
+  default :
+    // put a gpu compatible error message here.
+    return;
   }
 }
 vul::Cell::Cell(vul::CellType type, const std::vector<int> &nodes)
