@@ -34,12 +34,13 @@ private:
 
 template <typename Space>
 class Grid {
+  using space = typename Space::space; // really confusing; I know...
 public:
-  template <typename T> using Vec1D       = Kokkos::View<T *, Space>;
-  template <typename T> using Vec2D       = Kokkos::View<T **, Space>;
-  template <typename T> using PointVector = Kokkos::View<T *[3], Space>;
-  using FaceToCells                       = Kokkos::View<int *[2], Space>;
-  using FaceArea                          = Kokkos::View<double *[3], Space>;
+  template <typename T> using Vec1D       = Kokkos::View<T *, space>;
+  template <typename T> using Vec2D       = Kokkos::View<T **, space>;
+  template <typename T> using PointVector = Kokkos::View<T *[3], space>;
+  using FaceToCells                       = Kokkos::View<int *[2], space>;
+  using FaceArea                          = Kokkos::View<double *[3], space>;
 
   Grid(std::string filename);
   Grid(int ncells_x, int ncells_y, int ncells_z);

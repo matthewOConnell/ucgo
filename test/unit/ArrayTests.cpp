@@ -1,5 +1,5 @@
-#include <catch.hpp>
 #include <vul/Solution.h>
+#include <catch.hpp>
 
 TEST_CASE("Compute norm of array"){
   Kokkos::View<double*> s("s", 100);

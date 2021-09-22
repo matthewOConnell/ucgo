@@ -11,9 +11,12 @@
 #define VUL_ASSERT( boolean_statement, message) { if(not (boolean_statement)) {throw std::logic_error(std::string("ASSERT_FAILED: ") + std::string(message) + " at file: " + std::string(__FILE__) + " function: " + std::string(__func__) + " line: " + std::to_string(__LINE__) + std::string("\n"));}}
 
 namespace vul {
-
-using Host = Kokkos::DefaultHostExecutionSpace::memory_space;
-using Device = Kokkos::DefaultExecutionSpace::memory_space;
+struct Host {
+  using space = Kokkos::DefaultHostExecutionSpace::memory_space;
+};
+struct Device {
+  using space = Kokkos::DefaultExecutionSpace::memory_space;
+};
 
 template <typename View1, typename View2>
 void force_copy(View1 to, View2 from) {
