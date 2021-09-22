@@ -126,7 +126,7 @@ public:
   PointVector<double> cell_centroids;
 
   std::vector<std::vector<int>> cell_face_neighbors;
-  CompressedRowGraph node_to_cell;
+  CompressedRowGraph<Space> node_to_cell;
 
   void readPoints(FILE *fp);
   void readCells(FILE *fp);

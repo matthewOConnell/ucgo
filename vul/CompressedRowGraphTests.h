@@ -4,8 +4,10 @@
 
 namespace vul {
 
+template <typename Space>
 class CompressedRowGraph {
 public:
+  using space = typename Space::space; // really confusing; I know...
   CompressedRowGraph() = default;
   template <typename SubContainer>
   CompressedRowGraph(const std::vector<SubContainer> &graph) {
@@ -19,17 +21,15 @@ public:
 
     int next_ja = 0;
     for (long i = 0; i < long(graph.size()); i++) {
-      rows.h_view(i + 1) = rows.h_view(i) + long(graph[i].size());
+      rows(i + 1) = rows(i) + long(graph[i].size());
       for (int id : graph[i]) {
-        cols.h_view(next_ja++) = id;
+        cols(next_ja++) = id;
       }
     }
-    Kokkos::deep_copy(rows.d_view, rows.h_view);
-    Kokkos::deep_copy(cols.d_view, cols.h_view);
   }
 
 public:
-  template <typename T> using Vec1D = Kokkos::DualView<T *>;
+  template <typename T> using Vec1D = Kokkos::View<T *, space>;
   long num_rows                     = 0;
   long num_non_zero                 = 0;
   Vec1D<int> rows;

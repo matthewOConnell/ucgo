@@ -538,7 +538,7 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
                "Cannot build faces using a device grid");
   }
   Kokkos::Profiling::pushRegion("buildFaces");
-  node_to_cell        = CompressedRowGraph(buildNodeToCell());
+  node_to_cell        = CompressedRowGraph<Space>(buildNodeToCell());
   cell_face_neighbors = buildFaceNeighbors();
 
   {
@@ -657,19 +657,23 @@ template <typename Space>
 std::vector<int>
 vul::Grid<Space>::getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
                                          int cell_id) {
+  if (not std::is_same<Space, vul::Host>::value) {
+    VUL_ASSERT((std::is_same<Space, vul::Host>::value),
+               "Cannot getNodeNeighborsOfCell using a device grid");
+  }
   int neighbor_count = 0;
   for (int node : cell_nodes) {
     int row_length =
-        node_to_cell.rows.h_view(node + 1) - node_to_cell.rows.h_view(node);
+        node_to_cell.rows(node + 1) - node_to_cell.rows(node);
     neighbor_count += row_length;
   }
 
   std::vector<int> neighbors;
   neighbors.reserve(neighbor_count);
   for (int node : cell_nodes) {
-    for (int i = node_to_cell.rows.h_view(node);
-         i < node_to_cell.rows.h_view(node + 1); i++) {
-      int c = node_to_cell.cols.h_view(i);
+    for (int i = node_to_cell.rows(node);
+         i < node_to_cell.rows(node + 1); i++) {
+      int c = node_to_cell.cols(i);
       if (c != cell_id and not isIn(neighbors, c)) {
         neighbors.push_back(c);
       }
