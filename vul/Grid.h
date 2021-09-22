@@ -43,6 +43,8 @@ public:
 
   Grid(std::string filename);
   Grid(int ncells_x, int ncells_y, int ncells_z);
+  template <typename OtherSpace>
+  Grid(const Grid<OtherSpace>& g);
 
   int count(CellType type) const;
   static int typeLength(CellType type);

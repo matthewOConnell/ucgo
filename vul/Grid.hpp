@@ -213,6 +213,38 @@ private:
   double dx, dy, dz;
 };
 
+template<typename Space>
+template <typename OtherSpace>
+vul::Grid<Space>::Grid(const Grid<OtherSpace>& g){
+  points = PointVector<double>("points", g.points.extent(0));
+  vul::force_copy(points, g.points);
+  face_area = FaceArea("face_area", g.face_area.extent(0));
+  vul::force_copy(face_area, g.face_area);
+  tris         = Vec2D<int>("tris", g.tris.extent(0), 3);
+  vul::force_copy(tris, g.tris);
+  quads        = Vec2D<int>("quads", g.quads.extent(0), 4);
+  vul::force_copy(quads, g.quads);
+  tets         = Vec2D<int>("tets", g.tets.extent(0), 4);
+  vul::force_copy(tets, g.tets);
+  pyramids     = Vec2D<int>("pyramids", g.pyramids.extent(0), 5);
+  vul::force_copy(pyramids, g.pyramids);
+  prisms       = Vec2D<int>("prisms", g.prisms.extent(0), 6);
+  vul::force_copy(prisms, g.prisms);
+  hexs         = Vec2D<int>("hexs", g.hexs.extent(0), 8);
+  vul::force_copy(hexs, g.hexs);
+  tri_tags  = Vec1D<int>("tri_tags", g.tri_tags.extent(0));
+  vul::force_copy(tri_tags, g.tri_tags);
+  quad_tags = Vec1D<int>("quad_tags", g.quad_tags.extent(0));
+  cell_volume = Vec1D<double>("cell_volume", g.cell_volume.extent(0));
+  face_to_cell = FaceToCells("face_to_cells", g.face_to_cell.extent(0));
+  cell_centroids = PointVector<double>("cell_centroids", g.cell_centroids.extent(0));
+
+// This is not allocated on the device
+//  std::vector<std::vector<int>> cell_face_neighbors;
+  CompressedRowGraph node_to_cell;
+
+}
+
 template <typename Space>
 vul::Grid<Space>::Grid(int n_cells_x, int n_cells_y, int n_cells_z) {
   Kokkos::Profiling::pushRegion("Cartesian Grid Generation");
