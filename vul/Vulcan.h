@@ -5,7 +5,7 @@
 //Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 #pragma once
 
-#include "Grid.h"
+#include "Grid.hpp"
 #include "Macros.h"
 #include "Residual.h"
 #include "Solution.h"
@@ -15,9 +15,9 @@
 namespace vul {
 template <size_t NumEqns, size_t NumGasVars> class Vulcan {
 public:
-  Vulcan(const vul::Grid& grid)
-      : grid(grid), residual(&grid), Q("solution", grid.numCells()),
-        QG("gas-variables", grid.numCells()), R("residual", grid.numCells()) {
+  Vulcan(const vul::Grid<vul::Host>& grid_host_i, const vul::Grid<vul::Device>& grid_device_i)
+      : grid_host(grid_host_i), grid_device(grid_device_i), residual(&grid_device), Q("solution", grid_host.numCells()),
+        QG("gas-variables", grid_host.numCells()), R("residual", grid_host.numCells()) {
     setInitialConditions();
   }
   void solve(int num_iterations) {
@@ -52,7 +52,7 @@ public:
       }
     };
 
-    Kokkos::parallel_for("updateQ", grid.numCells(), update);
+    Kokkos::parallel_for("updateQ", grid_host.numCells(), update);
   }
 
   void writeCSV(std::string filename) {
@@ -67,8 +67,8 @@ public:
       }
       fprintf(fp, "\n");
     }
-    for (int inf_id = 0; inf_id < grid.numCells(); inf_id++) {
-      int vul_id = grid.getVulCellIdFromInfId(inf_id);
+    for (int inf_id = 0; inf_id < grid_host.numCells(); inf_id++) {
+      int vul_id = grid_host.getVulCellIdFromInfId(inf_id);
       for (int e = 0; e < NumEqns; e++) {
         fprintf(fp, "%e, ", Q.h_view(vul_id, e));
       }
@@ -78,7 +78,8 @@ public:
   }
 
 public:
-  Grid grid;
+  Grid<vul::Host> grid_host;
+  Grid<vul::Device> grid_device;
   Residual<NumEqns, NumGasVars> residual;
   StaticArray<NumEqns> Q_reference;
   SolutionArray<NumEqns> Q;
@@ -103,7 +104,7 @@ public:
         Q_device(c, e) = Q_ref[e];
       }
     };
-    Kokkos::parallel_for("set initial condition boundary", Kokkos::RangePolicy<>(grid.boundaryCellsStart(), grid.boundaryCellsEnd()), update_boundary);
+    Kokkos::parallel_for("set initial condition boundary", Kokkos::RangePolicy<>(grid_host.boundaryCellsStart(), grid_host.boundaryCellsEnd()), update_boundary);
 
     auto update_interior = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
@@ -111,7 +112,7 @@ public:
       }
       Q_device(c, 1) = 1.1*Q_ref[1]; // perturb first density to give non zero res
     };
-    Kokkos::parallel_for("set initial condition interior", grid.numVolumeCells(), update_interior);
+    Kokkos::parallel_for("set initial condition interior", grid_host.numVolumeCells(), update_interior);
 
     Kokkos::Profiling::popRegion();
 
@@ -122,8 +123,8 @@ public:
 
     auto Q_device = Q.d_view;
     auto Q_ref = Q_reference; // make a local copy to be transferred to the GPU
-    int boundary_cell_start = grid.boundaryCellsStart();
-    int boundary_cell_end = grid.boundaryCellsEnd();
+    int boundary_cell_start = grid_host.boundaryCellsStart();
+    int boundary_cell_end = grid_host.boundaryCellsEnd();
     auto set = KOKKOS_LAMBDA(int c) {
         for (int e = 0; e < NumEqns; e++) {
           Q_device(c, e) = Q_ref[e];
@@ -142,7 +143,7 @@ public:
       }
     };
 
-    Kokkos::parallel_reduce("calc R norm", grid.numVolumeCells(), calc_norm, norm);
+    Kokkos::parallel_reduce("calc R norm", grid_host.numVolumeCells(), calc_norm, norm);
     norm = sqrt(norm);
     return norm;
   }
@@ -160,7 +161,7 @@ public:
       QG_device(c, 1) = press;
     };
 
-    Kokkos::parallel_for("calcGasVariables", grid.numCells(), calc);
+    Kokkos::parallel_for("calcGasVariables", grid_host.numCells(), calc);
   }
 };
 } // namespace vul

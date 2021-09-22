@@ -30,19 +30,20 @@ std::array<int, 3> getDimensionsFromArgs(const std::vector<std::string> &args) {
 void solve(const std::vector<std::string> &args) {
   printf("Inside solve\n");
   auto filename = getFilenameFromArgs(args);
-  std::unique_ptr<vul::Grid> grid;
+  std::unique_ptr<vul::Grid<vul::Host>> grid;
   if (filename != "") {
-    grid = std::make_unique<vul::Grid>(filename);
+    grid = std::make_unique<vul::Grid<vul::Host>>(filename);
   } else {
     auto num_cells = getDimensionsFromArgs(args);
     if(num_cells[0] == -1) {
       printf("Error num cells is negative and grid filename is empty\n");
       exit(1);
     }
-    grid = std::make_unique<vul::Grid>(num_cells[0], num_cells[1], num_cells[2]);
+    grid = std::make_unique<vul::Grid<vul::Host>>(num_cells[0], num_cells[1], num_cells[2]);
   }
 
-  vul::Vulcan<5, 2> vulcan(*grid);
+  auto grid_device = std::make_unique<vul::Grid<vul::Device>>(*grid);
+  vul::Vulcan<5, 2> vulcan(*grid, *grid_device);
   Kokkos::Profiling::popRegion();
   int num_iterations = 10;
   Kokkos::Profiling::pushRegion("solve");

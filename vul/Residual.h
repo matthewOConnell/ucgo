@@ -11,13 +11,13 @@
 namespace vul {
 template <size_t N, size_t NG> class Residual {
 public:
-  Residual(const Grid *grid) : grid(grid) {}
+  Residual(const Grid<vul::Device> *grid) : grid(grid) {}
 
   void calc(const SolutionArray<N> &Q, const SolutionArray<2>& QG, SolutionArray<N> &R) {
 
     int num_faces = grid->face_to_cell.extent_int(0);
-    auto face_to_cell = grid->face_to_cell.d_view;
-    auto face_areas = grid->face_area.d_view;
+    auto face_to_cell = grid->face_to_cell;
+    auto face_areas = grid->face_area;
     auto Q_device = Q.d_view; // solution conserved variables
     auto QG_device = QG.d_view; // solution gas variables
     auto R_device = R.d_view; // residual
@@ -58,6 +58,6 @@ public:
   }
 
 private:
-  const Grid *grid;
+  const Grid<vul::Device> *grid;
 };
 } // namespace vul

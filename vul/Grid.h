@@ -31,13 +31,15 @@ private:
   CellType _type;
   std::vector<int> cell_nodes;
 };
+
+template <typename Space>
 class Grid {
 public:
-  template <typename T> using Vec1D       = Kokkos::DualView<T *>;
-  template <typename T> using Vec2D       = Kokkos::DualView<T **>;
-  template <typename T> using PointVector = Kokkos::DualView<T *[3]>;
-  using FaceToCells                       = Kokkos::DualView<int *[2]>;
-  using FaceArea                          = Kokkos::DualView<double *[3]>;
+  template <typename T> using Vec1D       = Kokkos::View<T *, Space>;
+  template <typename T> using Vec2D       = Kokkos::View<T **, Space>;
+  template <typename T> using PointVector = Kokkos::View<T *[3], Space>;
+  using FaceToCells                       = Kokkos::View<int *[2], Space>;
+  using FaceArea                          = Kokkos::View<double *[3], Space>;
 
   Grid(std::string filename);
   Grid(int ncells_x, int ncells_y, int ncells_z);

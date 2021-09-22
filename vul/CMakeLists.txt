@@ -7,6 +7,7 @@ set(headers
         Flux.h
         Macros.h
         Grid.h
+        Grid.hpp
         Residual.h
         PerfectGas.h
         PhysicalFlux.h
