@@ -3,7 +3,7 @@ add_subdirectory(catch2)
 
 set(test_sources
         ArrayTests.cpp
-        CompressedRowGraphTests.cpp
+        CompressedRowGraph.cpp
         GridTests.cpp
         GasVariableTests.cpp
         LDFSSFluxTests.cpp

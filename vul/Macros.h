@@ -9,6 +9,7 @@
 #include <Kokkos_Core.hpp>
 
 #define VUL_ASSERT( boolean_statement, message) { if(not (boolean_statement)) {throw std::logic_error(std::string("ASSERT_FAILED: ") + std::string(message) + " at file: " + std::string(__FILE__) + " function: " + std::string(__func__) + " line: " + std::to_string(__LINE__) + std::string("\n"));}}
+#define CHECKPOINT fprintf(stderr, "CHECKPOINT: %s %d\n", __FILE__, __LINE__);
 
 namespace vul {
 struct Host {

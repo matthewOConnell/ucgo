@@ -1,14 +1,27 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <vector>
+#include "Macros.h"
 
 namespace vul {
 
 template <typename Space>
 class CompressedRowGraph {
 public:
-  using space = typename Space::space; // really confusing; I know...
+  // Template magic to determine if this object is on the Host or Device
+  using space = typename Space::space;
   CompressedRowGraph() = default;
+
+  template <typename OtherSpace>
+  CompressedRowGraph(const CompressedRowGraph<OtherSpace>& g) {
+    num_non_zero = g.num_non_zero;
+    num_rows = g.num_rows;
+    rows     = Vec1D<int>("crs_ia", num_rows + 1);
+    cols     = Vec1D<int>("crs_ja", num_non_zero);
+    vul::force_copy(rows, g.rows);
+    vul::force_copy(cols, g.cols);
+  }
+
   template <typename SubContainer>
   CompressedRowGraph(const std::vector<SubContainer> &graph) {
     num_non_zero = 0;

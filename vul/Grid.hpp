@@ -245,7 +245,7 @@ vul::Grid<Space>::Grid(const Grid<OtherSpace>& g){
 
 // These is not allocated on the device
 //  std::vector<std::vector<int>> cell_face_neighbors;
-//  CompressedRowGraph node_to_cell;
+  node_to_cell = CompressedRowGraph<Space>(g.node_to_cell);
 
 }
 

@@ -1,7 +1,7 @@
 
 
 set(headers
-        CompressedRowGraphTests.h
+        CompressedRowGraph.h
         Decompositions.h
         DynamicMatrix.h
         Flux.h
