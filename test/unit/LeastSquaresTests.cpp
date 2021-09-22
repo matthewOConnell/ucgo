@@ -1,3 +1,4 @@
+#if 0
 #include <catch.hpp>
 #include <vul/Decompositions.h>
 #include <vul/DynamicMatrix.h>
@@ -121,3 +122,4 @@ TEST_CASE("Least squares weight calculation") {
     printf("node %d, grad %lf %lf %lf\n", n, grad.h_view(n, 0), grad.h_view(n, 1), grad.h_view(n, 2));
   }
 }
+#endif

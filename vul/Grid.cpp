@@ -1,5 +1,8 @@
 #include "Macros.h"
 #include "Grid.hpp"
 
-//vul::Grid<vul::Host>;
-//vul::Grid<vul::Device>;
+template class vul::Grid<vul::Host>;
+#ifdef KOKKOS_ENABLE_CUDA
+template class vul::Grid<vul::Device>;
+#endif
+

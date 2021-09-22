@@ -1,9 +1,10 @@
 #include <catch.hpp>
 #include <string>
 #include <vul/Grid.h>
+#include <vul/Macros.h>
 
 TEST_CASE("Can automatically generate a cartesian grid"){
-  vul::Grid grid(2,2,2);
+  vul::Grid<vul::Host> grid(2,2,2);
   REQUIRE(grid.count(vul::TRI) == 0);
   REQUIRE(grid.count(vul::QUAD) == 24);
   REQUIRE(grid.count(vul::TET) == 0);
@@ -12,7 +13,7 @@ TEST_CASE("Can automatically generate a cartesian grid"){
   REQUIRE(grid.count(vul::HEX) == 8);
   REQUIRE(grid.count(vul::FACE) == 24 + 12);
   for(int h = 0; h < grid.count(vul::HEX); h++){
-    REQUIRE(grid.cell_volume.h_view(h) == 1.0 / 8.0);
+    REQUIRE(grid.cell_volume(h) == 1.0 / 8.0);
   }
   bool bot_corner_exists = false;
   bool top_corner_exists = false;
@@ -32,7 +33,7 @@ TEST_CASE("Grid can report first instance of a boundary cell"){
   int num_cells_y = 3;
   int num_cells_z = 4;
   // -- generate a cartesian hex grid
-  auto grid = vul::Grid(num_cells_x, num_cells_y, num_cells_z);
+  auto grid = vul::Grid<vul::Host>(num_cells_x, num_cells_y, num_cells_z);
   int num_hexs = grid.count(vul::HEX);
   int num_quads = grid.count(vul::QUAD);
   int cell_start = grid.boundaryCellsStart();
@@ -44,7 +45,7 @@ TEST_CASE("Grid can report first instance of a boundary cell"){
 TEST_CASE("Can read primal data from a ugrid") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/ramp.lb8.ugrid";
-  vul::Grid grid(filename);
+  vul::Grid<vul::Host> grid(filename);
   REQUIRE(grid.count(vul::TRI) == 3176);
   REQUIRE(grid.count(vul::QUAD) == 16480);
   REQUIRE(grid.count(vul::TET) == 0);
@@ -59,7 +60,7 @@ TEST_CASE("Can read primal data from a ugrid") {
 TEST_CASE("Can get faces of each celll type") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
-  vul::Grid grid(filename);
+  vul::Grid<vul::Host> grid(filename);
 
   REQUIRE(grid.count(vul::TRI) == 6);
   REQUIRE(grid.count(vul::QUAD) == 8);
@@ -72,7 +73,7 @@ TEST_CASE("Can get faces of each celll type") {
 TEST_CASE("Can build faces from a ugrid") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/shock.lb8.ugrid";
-  vul::Grid grid(filename);
+  vul::Grid<vul::Host> grid(filename);
   REQUIRE(grid.count(vul::TRI) == 0);
   REQUIRE(grid.count(vul::QUAD) == 402);
   REQUIRE(grid.count(vul::TET) == 0);
@@ -81,13 +82,13 @@ TEST_CASE("Can build faces from a ugrid") {
   REQUIRE(grid.count(vul::HEX) == 100);
 
   REQUIRE(grid.count(vul::FACE) == 501);
-  REQUIRE(grid.face_area.h_view(0, 2) == -0.001);
+  REQUIRE(grid.face_area(0, 2) == -0.001);
 }
 
 TEST_CASE("vul::Cell exists") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
-  vul::Grid grid(filename);
+  vul::Grid<vul::Host> grid(filename);
 
   vul::Cell cell = grid.cell(0);
   auto tet       = grid.cell(0);
@@ -119,7 +120,7 @@ TEST_CASE("vul::Cell exists") {
 }
 
 TEST_CASE("Can compute grid metrics of single cartesian hex"){
-  auto grid = vul::Grid(1,1,1);
+  auto grid = vul::Grid<vul::Host>(1,1,1);
   REQUIRE(grid.getCellCentroid(0).x == Approx(0.5));
   REQUIRE(grid.getCellCentroid(0).y == Approx(0.5));
   REQUIRE(grid.getCellCentroid(0).z == Approx(0.5));
@@ -128,7 +129,7 @@ TEST_CASE("Can compute grid metrics of single cartesian hex"){
 TEST_CASE("Can compute grid metrics") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
-  vul::Grid grid(filename);
+  vul::Grid<vul::Host> grid(filename);
 
   std::vector<int> face_nodes = {0, 3, 2, 1};
   auto face_area              = grid.calcFaceArea(face_nodes);
@@ -136,10 +137,10 @@ TEST_CASE("Can compute grid metrics") {
   REQUIRE(face_area.y == -1.0);
   REQUIRE(face_area.z == 0);
 
-  REQUIRE(grid.cell_volume.h_view(0) == 1.0 / 24.0); // tet
-  REQUIRE(grid.cell_volume.h_view(1) == 1.0 / 6.0);  // pyramid
-  REQUIRE(grid.cell_volume.h_view(2) == 0.1);        // prism
-  REQUIRE(grid.cell_volume.h_view(3) == 1.0);        // hex
+  REQUIRE(grid.cell_volume(0) == 1.0 / 24.0); // tet
+  REQUIRE(grid.cell_volume(1) == 1.0 / 6.0);  // pyramid
+  REQUIRE(grid.cell_volume(2) == 0.1);        // prism
+  REQUIRE(grid.cell_volume(3) == 1.0);        // hex
 
   REQUIRE(grid.cell_centroids.extent_int(0) == grid.numCells());
 }
@@ -147,7 +148,7 @@ TEST_CASE("Can compute grid metrics") {
 TEST_CASE("Can convert to inf ordering") {
   std::string assets_dir = ASSETS_DIR;
   std::string filename   = assets_dir + "/13-node.lb8.ugrid";
-  vul::Grid grid(filename);
+  vul::Grid<vul::Host> grid(filename);
 
   // -- Triangles come first in Inf ordering
   REQUIRE(grid.getVulCellIdFromInfId(0) == 4);
