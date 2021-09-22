@@ -14,7 +14,4 @@ if (NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/Kokkos)
 endif()
 add_subdirectory(Kokkos)
 add_subdirectory(vul)
-
-if (NOT Kokkos_ENABLE_CUDA)
-  add_subdirectory(test)
-endif()
+add_subdirectory(test)

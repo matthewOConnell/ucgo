@@ -44,8 +44,8 @@ TEST_CASE("can compute LDFSS flux") {
     REQUIRE(consistent_flux[4] == Approx(flux[4]).epsilon(1.0e-8));
   }
   SECTION("supersonic - upwind left state") {
-    auto ql = vul::StaticArray<5>{1.1, 12.1, 12.2, 12.3, 355};
-    auto qr = vul::StaticArray<5>{1.0, 10.1, 10.2, 10.3, 255};
+    auto ql = vul::StaticArray<5>{1.1, 12.1, 12.2, 12.3, 355.0};
+    auto qr = vul::StaticArray<5>{1.0, 10.1, 10.2, 10.3, 255.0};
     auto qgl = vul::StaticArray<2>{gamma, vul::perfect_gas::calcPressure(ql, gamma)};
     auto qgr = vul::StaticArray<2>{gamma, vul::perfect_gas::calcPressure(qr, gamma)};
     auto consistent_flux =
@@ -58,8 +58,8 @@ TEST_CASE("can compute LDFSS flux") {
     REQUIRE(consistent_flux[4] == Approx(flux[4]).epsilon(1.0e-8));
   }
   SECTION("supersonic - upwind right state") {
-    auto ql = vul::StaticArray<5>({1.0, -10.1, -10.2, -10.3, 200});
-    auto qr = vul::StaticArray<5>({1.1, -12.1, -12.2, -12.3, 300});
+    auto ql = vul::StaticArray<5>{1.0, -10.1, -10.2, -10.3, 200.0};
+    auto qr = vul::StaticArray<5>{1.1, -12.1, -12.2, -12.3, 300.0};
     auto qgl = vul::StaticArray<2>{gamma, vul::perfect_gas::calcPressure(ql, gamma)};
     auto qgr = vul::StaticArray<2>{gamma, vul::perfect_gas::calcPressure(qr, gamma)};
     auto consistent_flux =
