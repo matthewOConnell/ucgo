@@ -555,8 +555,10 @@ void vul::Grid::getCell(int cell_id, int *cell_nodes) const {
     }
     return;
   }
+  default :{
+    VUL_ASSERT(false, "Could not match cell type: " + std::to_string(cell_type));
   }
-  VUL_ASSERT(false, "Could not match cell type: " + std::to_string(cell_type));
+  }
 }
 std::vector<std::set<int>> vul::Grid::buildNodeToCell() {
   std::vector<std::set<int>> n2c(numPoints());
