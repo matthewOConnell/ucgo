@@ -235,13 +235,17 @@ vul::Grid<Space>::Grid(const Grid<OtherSpace>& g){
   tri_tags  = Vec1D<int>("tri_tags", g.tri_tags.extent(0));
   vul::force_copy(tri_tags, g.tri_tags);
   quad_tags = Vec1D<int>("quad_tags", g.quad_tags.extent(0));
+  vul::force_copy(quad_tags, g.quad_tags);
   cell_volume = Vec1D<double>("cell_volume", g.cell_volume.extent(0));
+  vul::force_copy(cell_volume, g.cell_volume);
   face_to_cell = FaceToCells("face_to_cells", g.face_to_cell.extent(0));
+  vul::force_copy(face_to_cell, g.face_to_cell);
   cell_centroids = PointVector<double>("cell_centroids", g.cell_centroids.extent(0));
+  vul::force_copy(cell_centroids, g.cell_centroids);
 
-// This is not allocated on the device
+// These is not allocated on the device
 //  std::vector<std::vector<int>> cell_face_neighbors;
-  CompressedRowGraph node_to_cell;
+//  CompressedRowGraph node_to_cell;
 
 }
 
