@@ -2,36 +2,9 @@
 #include <Kokkos_DualView.hpp>
 #include <stdio.h>
 #include <string>
-#include <vector>
+#include "../../vul/Macros.h"
 
 
-template <typename View1, typename View2>
-void for_real_copy(View1 to, View2 from){
-    using WriteSpace = typename View1::memory_space;
-    using ReadSpace = typename View2::memory_space;
-    using HostSpace = Kokkos::DefaultHostExecutionSpace::memory_space;
-    using DeviceSpace = Kokkos::DefaultExecutionSpace::memory_space;
-    // same to same
-    if(std::is_same<ReadSpace, WriteSpace>::value){
-      Kokkos::deep_copy(to, from);
-      return;
-    } 
-    // host to device
-    if(std::is_same<WriteSpace, DeviceSpace>::value){
-      auto mirror = create_mirror_view(to);
-      Kokkos::deep_copy(mirror, from); 
-      Kokkos::deep_copy(to, mirror);
-      return;
-    }
-    // device to host
-    if(std::is_same<WriteSpace, HostSpace>::value){
-      auto mirror = create_mirror_view(from);
-      Kokkos::deep_copy(mirror, from); 
-      Kokkos::deep_copy(to, mirror); 
-      return;
-    }
-    printf("You should not be here.\n");
-}
 
 template<typename Space>
 class Grid {

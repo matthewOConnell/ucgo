@@ -6,5 +6,41 @@
 #pragma once
 #include <string>
 #include <stdexcept>
+#include <Kokkos_Core.hpp>
 
 #define VUL_ASSERT( boolean_statement, message) { if(not (boolean_statement)) {throw std::logic_error(std::string("ASSERT_FAILED: ") + std::string(message) + " at file: " + std::string(__FILE__) + " function: " + std::string(__func__) + " line: " + std::to_string(__LINE__) + std::string("\n"));}}
+
+namespace vul {
+
+using Host = Kokkos::DefaultHostExecutionSpace::memory_space;
+using Device = Kokkos::DefaultExecutionSpace::memory_space;
+
+template <typename View1, typename View2>
+void force_copy(View1 to, View2 from) {
+  using WriteSpace  = typename View1::memory_space;
+  using ReadSpace   = typename View2::memory_space;
+  using HostSpace   = Kokkos::DefaultHostExecutionSpace::memory_space;
+  using DeviceSpace = Kokkos::DefaultExecutionSpace::memory_space;
+  // same to same
+  if (std::is_same<ReadSpace, WriteSpace>::value) {
+    Kokkos::deep_copy(to, from);
+    return;
+  }
+  // host to device
+  if (std::is_same<WriteSpace, DeviceSpace>::value) {
+    auto mirror = create_mirror_view(to);
+    Kokkos::deep_copy(mirror, from);
+    Kokkos::deep_copy(to, mirror);
+    return;
+  }
+  // device to host
+  if (std::is_same<WriteSpace, HostSpace>::value) {
+    auto mirror = create_mirror_view(from);
+    Kokkos::deep_copy(mirror, from);
+    Kokkos::deep_copy(to, mirror);
+    return;
+  }
+  printf("You should not be here.\n");
+}
+
+}
