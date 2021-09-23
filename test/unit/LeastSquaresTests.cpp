@@ -30,7 +30,7 @@ public:
 
     for (int node = 0; node < grid.node_to_cell.num_rows; node++) {
       auto get_neighbor_weight = KOKKOS_LAMBDA(int i) { return 1.0; };
-      setLSQWeights(getCellCentroid, grid.node_to_cell.rowLength(node),
+      setLSQWeights(getCellCentroid, grid.node_to_cell(node),
                     get_neighbor_weight, getPoint(node), coeffs_host, grid.node_to_cell.rowStart(node));
     }
     vul::force_copy(coeffs, coeffs_host);
@@ -53,41 +53,44 @@ public:
     auto calc_node_grad = KOKKOS_LAMBDA(int n) {
       auto row = grid.node_to_cell(n);
       for(int i = 0; i < row.size; i++){
+        int index = row.row_index_start + i;
         long neighbor = row(i);
         double d = get_field_value(neighbor);
-        grad(n, 0) += coeffs(i, 1) * d;
-        grad(n, 1) += coeffs(i, 2) * d;
-        grad(n, 2) += coeffs(i, 3) * d;
+        grad(n, 0) += coeffs(index, 1) * d;
+        grad(n, 1) += coeffs(index, 2) * d;
+        grad(n, 2) += coeffs(index, 3) * d;
       }
     };
     Kokkos::parallel_for("calc grad", grid.node_to_cell.num_rows,
                          calc_node_grad);
   }
 
-  template <typename getPoint, typename getWeight, typename Point>
-  void setLSQWeights(getPoint get_neighbor_point, int number_of_neighbors,
+  template <typename getPoint, typename getWeight, typename Point, typename Row>
+  void setLSQWeights(getPoint get_neighbor_point, Row row,
                      getWeight get_neighbor_weight, const Point &center_point, Kokkos::View<double*[4]> coeffs_write, long write_offset) {
     using Matrix = vul::DynamicMatrix<double>;
-    Matrix A(number_of_neighbors, 4);
-    for (int point = 0; point < number_of_neighbors; ++point) {
-      auto w        = get_neighbor_weight(point);
-      auto distance = get_neighbor_point(point) - center_point;
-      A(point, 0)   = w * 1.0;
-      A(point, 1)   = w * distance.x;
-      A(point, 2)   = w * distance.y;
-      A(point, 3)   = w * distance.z;
+    Matrix A(row.size, 4);
+    for (int i = 0; i < row.size; ++i) {
+      auto neighbor = row(i);
+      auto w        = get_neighbor_weight(neighbor);
+//      auto distance = get_neighbor_point(neighbor) - center_point;
+      auto p = get_neighbor_point(neighbor);
+      A(i, 0)   = w * 1.0;
+      A(i, 1)   = w * p.x;
+      A(i, 2)   = w * p.y;
+      A(i, 3)   = w * p.z;
     }
     Matrix Q, R;
     std::tie(Q, R) = vul::householderDecomposition(A);
-
     auto Ainv = vul::calcPseudoInverse(Q, R);
-    for (int point = 0; point < number_of_neighbors; ++point) {
-      auto w           = get_neighbor_weight(point);
-//      printf("w %lf, A %lf %lf %lf %lf\n", w, Ainv(0, point), Ainv(1, point), Ainv(2, point), Ainv(3, point));
-      coeffs_write(write_offset + point, 0) = w * Ainv(0, point);
-      coeffs_write(write_offset + point, 1) = w * Ainv(1, point);
-      coeffs_write(write_offset + point, 2) = w * Ainv(2, point);
-      coeffs_write(write_offset + point, 3) = w * Ainv(3, point);
+    VUL_ASSERT(Ainv.columns == row.size, "Ainv should be same size ("+std::to_string(Ainv.rows)+") as rows" + std::to_string(row.size) );
+    for (int i = 0; i < row.size; ++i) {
+      auto neighbor = row(i);
+      auto w           = get_neighbor_weight(neighbor);
+      coeffs_write(write_offset + i, 0) = w * Ainv(0, i);
+      coeffs_write(write_offset + i, 1) = w * Ainv(1, i);
+      coeffs_write(write_offset + i, 2) = w * Ainv(2, i);
+      coeffs_write(write_offset + i, 3) = w * Ainv(3, i);
     }
   }
 };
@@ -111,13 +114,14 @@ TEST_CASE("Least squares weight calculation") {
   };
   auto get_field_at_cell = KOKKOS_LAMBDA(int c) {
     auto p = getCellCentroid(c);
-    return 3.8 * p.x + 2.2 * p.y - 9.3 * p.z;
+    return 3.8 * p.x + 4.5*p.y - 9.7*p.z;
   };
   grad_calculator.calcGrad(get_field_at_cell, grid, grad);
   auto grad_mirror = create_mirror(grad);
   vul::force_copy(grad_mirror, grad);
   for (int n = 0; n < grid.numPoints(); n++) {
-    printf("node %d, grad %lf %lf %lf\n", n, grad_mirror(n, 0),
-           grad_mirror(n, 1), grad_mirror(n, 2));
+    REQUIRE(grad_mirror(n, 0) == Approx(3.8));
+    REQUIRE(grad_mirror(n, 1) == Approx(4.5));
+    REQUIRE(grad_mirror(n, 2) == Approx(-9.7));
   }
 }
