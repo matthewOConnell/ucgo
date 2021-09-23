@@ -6,6 +6,7 @@ set(headers
         DynamicMatrix.h
         Flux.h
         Macros.h
+        Gradients.h
         Grid.h
         Grid.hpp
         Residual.h
