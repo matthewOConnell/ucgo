@@ -90,6 +90,7 @@ public:
     Matrix Q, R;
     std::tie(Q, R) = vul::householderDecomposition(A);
 
+    VUL_ASSERT(false, "This is wrong.  Something about point = 0 is wrong");
     auto Ainv = vul::calcPseudoInverse(Q, R);
     for (int point = 0; point < number_of_neighbors; ++point) {
       auto w           = get_neighbor_weight(point);
