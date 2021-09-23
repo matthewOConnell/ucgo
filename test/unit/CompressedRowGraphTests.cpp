@@ -49,6 +49,11 @@ TEST_CASE("Can use accessor methods in a kokkos parallel region on the device"){
   REQUIRE(n2c.rowStart(0) == 0);
   REQUIRE(n2c.rowEnd(0) == 3);
 
+  REQUIRE(n2c.rowLength(0) == 3);
+  REQUIRE(n2c.rowLength(1) == 3);
+  REQUIRE(n2c.rowLength(2) == 2);
+  REQUIRE(n2c.rowLength(3) == 2);
+
   for(int r = 0; r < n2c.num_rows; r++){
     auto row = n2c(r);
     for(int i = 0; i < row.size; i++){

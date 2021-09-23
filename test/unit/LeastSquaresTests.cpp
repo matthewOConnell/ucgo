@@ -3,15 +3,13 @@
 #include <vul/DynamicMatrix.h>
 #include <vul/Grid.h>
 #include <vul/Macros.h>
-#if 0
 
-// Turn these tests for cuda backend until they are ready
-#ifndef KOKKOS_ENABLE_CUDA
 namespace vul {
 class LeastSquares {
 public:
-  LeastSquares(const vul::Grid<vul::Device> &grid)
+  LeastSquares(const vul::Grid<vul::Host> &grid)
       : coeffs("lsq_coeffs", grid.node_to_cell.num_non_zero) {
+    auto coeffs_host =  Kokkos::View<double* [4], vul::Host::space>("lsq-host-coeffs", grid.node_to_cell.num_non_zero);
     auto cell_centroids  = grid.cell_centroids;
     auto getCellCentroid = KOKKOS_LAMBDA(int cell) {
       vul::Point<double> p;
@@ -30,21 +28,12 @@ public:
       return p;
     };
 
-    auto n2c_rows = grid.node_to_cell.rows;
-    auto n2c_cols = grid.node_to_cell.cols;
-    long num_nodes = grid.node_to_cell.num_rows;
-    for (int node = 0; node < num_nodes; node++) {
-      int num_neighbors =
-          grid.node_to_cell.rows(node + 1) - grid.node_to_cell.rows(node);
-      auto get_neighbor_weight = KOKKOS_LAMBDA(int i) {
-        long index    = n2c_rows(node) + i;
-        long neighbor = n2c_cols(index);
-        //         we could compute an inverse distance here.
-        return 1.0;
-      };
-      setLSQWeights(getCellCentroid, num_neighbors, get_neighbor_weight,
-                    getPoint(node));
+    for (int node = 0; node < grid.node_to_cell.num_rows; node++) {
+      auto get_neighbor_weight = KOKKOS_LAMBDA(int i) { return 1.0; };
+      setLSQWeights(getCellCentroid, grid.node_to_cell.rowLength(node),
+                    get_neighbor_weight, getPoint(node), coeffs_host, grid.node_to_cell.rowStart(node));
     }
+    vul::force_copy(coeffs, coeffs_host);
   }
 
 public:
@@ -62,10 +51,10 @@ public:
     }
 
     auto calc_node_grad = KOKKOS_LAMBDA(int n) {
-      for (long i = grid.node_to_cell.rows(n);
-           i < grid.node_to_cell.rows(n + 1); i++) {
-        auto c   = grid.node_to_cell.cols(i);
-        double d = get_field_value(c);
+      auto row = grid.node_to_cell(n);
+      for(int i = 0; i < row.size; i++){
+        long neighbor = row(i);
+        double d = get_field_value(neighbor);
         grad(n, 0) += coeffs(i, 1) * d;
         grad(n, 1) += coeffs(i, 2) * d;
         grad(n, 2) += coeffs(i, 3) * d;
@@ -77,7 +66,7 @@ public:
 
   template <typename getPoint, typename getWeight, typename Point>
   void setLSQWeights(getPoint get_neighbor_point, int number_of_neighbors,
-                     getWeight get_neighbor_weight, const Point &center_point) {
+                     getWeight get_neighbor_weight, const Point &center_point, Kokkos::View<double*[4]> coeffs_write, long write_offset) {
     using Matrix = vul::DynamicMatrix<double>;
     Matrix A(number_of_neighbors, 4);
     for (int point = 0; point < number_of_neighbors; ++point) {
@@ -91,14 +80,14 @@ public:
     Matrix Q, R;
     std::tie(Q, R) = vul::householderDecomposition(A);
 
-    VUL_ASSERT(false, "This is wrong.  Something about point = 0 is wrong");
     auto Ainv = vul::calcPseudoInverse(Q, R);
     for (int point = 0; point < number_of_neighbors; ++point) {
       auto w           = get_neighbor_weight(point);
-      coeffs(point, 0) = w * Ainv(0, point);
-      coeffs(point, 1) = w * Ainv(1, point);
-      coeffs(point, 2) = w * Ainv(2, point);
-      coeffs(point, 3) = w * Ainv(3, point);
+//      printf("w %lf, A %lf %lf %lf %lf\n", w, Ainv(0, point), Ainv(1, point), Ainv(2, point), Ainv(3, point));
+      coeffs_write(write_offset + point, 0) = w * Ainv(0, point);
+      coeffs_write(write_offset + point, 1) = w * Ainv(1, point);
+      coeffs_write(write_offset + point, 2) = w * Ainv(2, point);
+      coeffs_write(write_offset + point, 3) = w * Ainv(3, point);
     }
   }
 };
@@ -109,28 +98,26 @@ TEST_CASE("Least squares weight calculation") {
   auto grid      = vul::Grid<vul::Device>(grid_host);
   vul::LeastSquares grad_calculator(grid);
 
-    Kokkos::View<double *[3], vul::Device::space> grad("test gradient",
-    grid.numPoints());
+  Kokkos::View<double *[3], vul::Device::space> grad("test gradient",
+                                                     grid.numPoints());
 
-    auto centroids = grid.cell_centroids;
-    auto getCellCentroid = KOKKOS_LAMBDA(int cell) {
-      vul::Point<double> p;
-      p.x = centroids(cell, 0);
-      p.y = centroids(cell, 1);
-      p.z = centroids(cell, 2);
-      return p;
-    };
-    auto get_field_at_cell = KOKKOS_LAMBDA(int c) {
-      auto p = getCellCentroid(c);
-      return 3.8*p.x + 2.2*p.y -9.3*p.z;
-    };
-    grad_calculator.calcGrad(get_field_at_cell, grid, grad);
-    auto grad_mirror = create_mirror(grad);
-    for(int n = 0; n < grid.numPoints(); n++){
-      printf("node %d, grad %lf %lf %lf\n", n, grad_mirror(n, 0),
-      grad_mirror(n, 1), grad_mirror(n, 2));
-    }
+  auto centroids       = grid.cell_centroids;
+  auto getCellCentroid = KOKKOS_LAMBDA(int cell) {
+    vul::Point<double> p;
+    p.x = centroids(cell, 0);
+    p.y = centroids(cell, 1);
+    p.z = centroids(cell, 2);
+    return p;
+  };
+  auto get_field_at_cell = KOKKOS_LAMBDA(int c) {
+    auto p = getCellCentroid(c);
+    return 3.8 * p.x + 2.2 * p.y - 9.3 * p.z;
+  };
+  grad_calculator.calcGrad(get_field_at_cell, grid, grad);
+  auto grad_mirror = create_mirror(grad);
+  vul::force_copy(grad_mirror, grad);
+  for (int n = 0; n < grid.numPoints(); n++) {
+    printf("node %d, grad %lf %lf %lf\n", n, grad_mirror(n, 0),
+           grad_mirror(n, 1), grad_mirror(n, 2));
+  }
 }
-#endif
-
-#endif

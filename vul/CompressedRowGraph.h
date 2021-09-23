@@ -1,35 +1,34 @@
+#include "Macros.h"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <vector>
-#include "Macros.h"
 
 namespace vul {
 
-template <typename Space>
-class CompressedRowGraph {
+template <typename Space> class CompressedRowGraph {
 public:
-
   class Row {
   public:
     long row;
     int size;
     long row_index_start;
-    const CompressedRowGraph<Space>* graph;
+    const CompressedRowGraph<Space> *graph;
+
   public:
     KOKKOS_FUNCTION long operator()(int i) const {
       return graph->cols(row_index_start + i);
     }
   };
   // Template magic to determine if this object is on the Host or Device
-  using space = typename Space::space;
+  using space          = typename Space::space;
   CompressedRowGraph() = default;
 
   template <typename OtherSpace>
-  CompressedRowGraph(const CompressedRowGraph<OtherSpace>& g) {
+  CompressedRowGraph(const CompressedRowGraph<OtherSpace> &g) {
     num_non_zero = g.num_non_zero;
-    num_rows = g.num_rows;
-    rows     = Vec1D<int>("crs_ia", num_rows + 1);
-    cols     = Vec1D<int>("crs_ja", num_non_zero);
+    num_rows     = g.num_rows;
+    rows         = Vec1D<int>("crs_ia", num_rows + 1);
+    cols         = Vec1D<int>("crs_ja", num_non_zero);
     vul::force_copy(rows, g.rows);
     vul::force_copy(cols, g.cols);
   }
@@ -39,13 +38,9 @@ public:
     return Row{r, size, rowStart(r), this};
   }
 
-  KOKKOS_FUNCTION long rowStart(int r) const {
-    return rows(r);
-  }
+  KOKKOS_FUNCTION long rowStart(int r) const { return rows(r); }
 
-  KOKKOS_FUNCTION long rowEnd(int r) const {
-    return rows(r+1);
-  }
+  KOKKOS_FUNCTION long rowEnd(int r) const { return rows(r + 1); }
 
   template <typename SubContainer>
   CompressedRowGraph(const std::vector<SubContainer> &graph) {
@@ -65,6 +60,7 @@ public:
       }
     }
   }
+  KOKKOS_FUNCTION int rowLength(int r) const { return rowEnd(r) - rowStart(r); }
 
 public:
   template <typename T> using Vec1D = Kokkos::View<T *, space>;
