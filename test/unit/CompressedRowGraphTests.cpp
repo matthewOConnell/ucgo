@@ -39,3 +39,21 @@ TEST_CASE("Can build a ragged array") {
     }
   }
 }
+
+TEST_CASE("Can use accessor methods in a kokkos parallel region on the device"){
+  std::vector<std::vector<int>> node_to_cell = {
+      {0, 1, 2}, {0, 1, 3}, {0, 2}, {1, 3}};
+
+  vul::CompressedRowGraph<vul::Host> n2c(node_to_cell);
+
+  REQUIRE(n2c.rowStart(0) == 0);
+  REQUIRE(n2c.rowEnd(0) == 3);
+
+  for(int r = 0; r < n2c.num_rows; r++){
+    auto row = n2c(r);
+    for(int i = 0; i < row.size; i++){
+      auto neighbor = row(i);
+      REQUIRE(contains(node_to_cell[r], neighbor));
+    }
+  }
+}

@@ -8,6 +8,18 @@ namespace vul {
 template <typename Space>
 class CompressedRowGraph {
 public:
+
+  class Row {
+  public:
+    long row;
+    int size;
+    long row_index_start;
+    const CompressedRowGraph<Space>* graph;
+  public:
+    KOKKOS_FUNCTION long operator()(int i) const {
+      return graph->cols(row_index_start + i);
+    }
+  };
   // Template magic to determine if this object is on the Host or Device
   using space = typename Space::space;
   CompressedRowGraph() = default;
@@ -20,6 +32,19 @@ public:
     cols     = Vec1D<int>("crs_ja", num_non_zero);
     vul::force_copy(rows, g.rows);
     vul::force_copy(cols, g.cols);
+  }
+
+  KOKKOS_FUNCTION Row operator()(int r) const {
+    int size = rowEnd(r) - rowStart(r);
+    return Row{r, size, rowStart(r), this};
+  }
+
+  KOKKOS_FUNCTION long rowStart(int r) const {
+    return rows(r);
+  }
+
+  KOKKOS_FUNCTION long rowEnd(int r) const {
+    return rows(r+1);
   }
 
   template <typename SubContainer>

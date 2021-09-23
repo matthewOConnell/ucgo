@@ -3,6 +3,7 @@
 #include <vul/DynamicMatrix.h>
 #include <vul/Grid.h>
 #include <vul/Macros.h>
+#if 0
 
 // Turn these tests for cuda backend until they are ready
 #ifndef KOKKOS_ENABLE_CUDA
@@ -130,4 +131,6 @@ TEST_CASE("Least squares weight calculation") {
       grad_mirror(n, 1), grad_mirror(n, 2));
     }
 }
+#endif
+
 #endif
