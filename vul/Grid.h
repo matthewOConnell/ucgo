@@ -78,33 +78,10 @@ public:
     return num_total_cells;
   }
 
-  KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int>
-  cellIdToTypeAndIndexPair(int cell_id) const {
-    if (cell_id < numTets())
-      return {TET, cell_id};
-    cell_id -= numTets();
-    if (cell_id < numPyramids())
-      return {PYRAMID, cell_id};
-    cell_id -= numPyramids();
-    if (cell_id < numPrisms())
-      return {PRISM, cell_id};
-    cell_id -= numPrisms();
-    if (cell_id < numHexs())
-      return {HEX, cell_id};
-    cell_id -= numHexs();
-    if (cell_id < numTris())
-      return {TRI, cell_id};
-    cell_id -= numTris();
-    if (cell_id < numQuads())
-      return {QUAD, cell_id};
-    cell_id -= numQuads();
-    // VUL_ASSERT(false, "Could not find type of cell_id " +
-    // std::to_string(orig_cell_id));
-    return {TRI, -1}; // return bad data.  Hopefully we find it quickly, we
-                      // can't assert on device...
-  }
+  KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int> cellIdToTypeAndIndexPair(int cell_id) const;
   KOKKOS_FUNCTION Point<double> getPoint(int node_id) const;
-  KOKKOS_FUNCTION Point<double> getCentroid(int cell_id) const;
+  KOKKOS_FUNCTION Point<double> getCellCentroid(int cell_id) const;
+  KOKKOS_FUNCTION Point<double> getFaceCentroid(int face_id) const;
 
   void printSummary() const;
 

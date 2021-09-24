@@ -47,4 +47,11 @@ void force_copy(View1 to, View2 from) {
   printf("You should not be here.\n");
 }
 
+template <typename View>
+auto create_host_copy(View gpu){
+  auto host = Kokkos::create_mirror(gpu);
+  force_copy(host, gpu);
+  return host;
+}
+
 }

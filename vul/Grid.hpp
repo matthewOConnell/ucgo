@@ -244,6 +244,10 @@ vul::Grid<Space>::Grid(const Grid<OtherSpace> &g) {
       PointVector<double>("cell_centroids", g.cell_centroids.extent(0));
   vul::force_copy(cell_centroids, g.cell_centroids);
 
+  face_centroids =
+      PointVector<double>("face_centroids", g.face_centroids.extent(0));
+  vul::force_copy(face_centroids, g.face_centroids);
+
   face_to_nodes = FaceToNodes("face_to_nodes", g.face_to_nodes.extent(0));
   vul::force_copy(face_to_nodes, g.face_to_nodes);
 
@@ -578,7 +582,9 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
           face_to_nodes(next_face, 3) = -1; // quad
         }
         auto centroid = calcFaceCentroid(cell.face(face_number));
-        face_centroids(next_face, 0) =
+        face_centroids(next_face, 0) = centroid.x;
+        face_centroids(next_face, 1) = centroid.y;
+        face_centroids(next_face, 2) = centroid.z;
         next_face++;
       }
     }
@@ -825,9 +831,14 @@ vul::Point<double> vul::Grid<Space>::getPoint(int n) const {
   return Point<double>{points(n, 0), points(n, 1), points(n, 2)};
 }
 template <typename Space>
-vul::Point<double> vul::Grid<Space>::getCentroid(int c) const {
+vul::Point<double> vul::Grid<Space>::getCellCentroid(int c) const {
   return Point<double>{cell_centroids(c, 0), cell_centroids(c, 1),
                        cell_centroids(c, 2)};
+}
+template <typename Space>
+vul::Point<double> vul::Grid<Space>::getFaceCentroid(int f) const {
+  return Point<double>{face_centroids(f, 0), face_centroids(f, 1),
+                       face_centroids(f, 2)};
 }
 template <typename Space> double vul::Grid<Space>::computeTetVolume(int t) {
   auto a   = getPoint(tets(t, 0));
@@ -1109,6 +1120,32 @@ vul::Cell::Cell(vul::CellType type, const int *nodes) : _type(type) {
     // put a gpu compatible error message here.
     return;
   }
+}
+
+template <typename Space>
+KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int> vul::Grid<Space>::cellIdToTypeAndIndexPair(int cell_id) const {
+  if (cell_id < numTets())
+    return {TET, cell_id};
+  cell_id -= numTets();
+  if (cell_id < numPyramids())
+    return {PYRAMID, cell_id};
+  cell_id -= numPyramids();
+  if (cell_id < numPrisms())
+    return {PRISM, cell_id};
+  cell_id -= numPrisms();
+  if (cell_id < numHexs())
+    return {HEX, cell_id};
+  cell_id -= numHexs();
+  if (cell_id < numTris())
+    return {TRI, cell_id};
+  cell_id -= numTris();
+  if (cell_id < numQuads())
+    return {QUAD, cell_id};
+  cell_id -= numQuads();
+  // VUL_ASSERT(false, "Could not find type of cell_id " +
+  // std::to_string(orig_cell_id));
+  return {TRI, -1}; // return bad data.  Hopefully we find it quickly, we
+  // can't assert on device...
 }
 inline vul::Cell::Cell(vul::CellType type, const std::vector<int> &nodes)
     : _type(type), cell_nodes(nodes) {}
