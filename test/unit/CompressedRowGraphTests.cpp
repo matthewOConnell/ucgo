@@ -45,6 +45,7 @@ TEST_CASE("Can use accessor methods in a kokkos parallel region on the device"){
       {0, 1, 2}, {0, 1, 3}, {0, 2}, {1, 3}};
 
   vul::CompressedRowGraph<vul::Host> n2c(node_to_cell);
+  REQUIRE(n2c.size() == 4);
 
   REQUIRE(n2c.rowStart(0) == 0);
   REQUIRE(n2c.rowEnd(0) == 3);
@@ -56,7 +57,7 @@ TEST_CASE("Can use accessor methods in a kokkos parallel region on the device"){
 
   for(int r = 0; r < n2c.num_rows; r++){
     auto row = n2c(r);
-    for(int i = 0; i < row.size; i++){
+    for(int i = 0; i < row.size(); i++){
       auto neighbor = row(i);
       REQUIRE(contains(node_to_cell[r], neighbor));
     }

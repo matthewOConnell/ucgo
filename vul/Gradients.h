@@ -3,13 +3,41 @@
 #include "Grid.h"
 
 namespace vul {
+template <typename getPoint, typename getWeight, typename Point, typename Row>
+void setLSQWeights(getPoint get_neighbor_point, Row row,
+                   getWeight get_neighbor_weight, const Point &center_point, Kokkos::View<double*[4], vul::Host::space> coeffs_write, long write_offset) {
+  using Matrix = vul::DynamicMatrix<double>;
+  Matrix A(row.size(), 4);
+  for (int i = 0; i < row.size(); ++i) {
+    auto neighbor = row(i);
+    auto w        = get_neighbor_weight(neighbor);
+    auto dist = get_neighbor_point(neighbor) - center_point;
+    //      auto p = get_neighbor_point(neighbor);
+    A(i, 0)   = w * 1.0;
+    A(i, 1)   = w * dist.x;
+    A(i, 2)   = w * dist.y;
+    A(i, 3)   = w * dist.z;
+  }
+  Matrix Q, R;
+  std::tie(Q, R) = vul::householderDecomposition(A);
+  auto Ainv = vul::calcPseudoInverse(Q, R);
+  VUL_ASSERT(Ainv.columns == row.size(), "Ainv should be same size ("+std::to_string(Ainv.rows)+") as rows" + std::to_string(row.size()) );
+  for (int i = 0; i < row.size(); ++i) {
+    auto neighbor = row(i);
+    auto w           = get_neighbor_weight(neighbor);
+    coeffs_write(write_offset + i, 0) = w * Ainv(0, i);
+    coeffs_write(write_offset + i, 1) = w * Ainv(1, i);
+    coeffs_write(write_offset + i, 2) = w * Ainv(2, i);
+    coeffs_write(write_offset + i, 3) = w * Ainv(3, i);
+  }
+}
 class LeastSquares {
 public:
   LeastSquares(const vul::Grid<vul::Host> &grid)
       : coeffs("lsq_coeffs", grid.node_to_cell.num_non_zero) {
     auto coeffs_host =  Kokkos::View<double* [4], vul::Host::space>("lsq-host-coeffs", grid.node_to_cell.num_non_zero);
     auto cell_centroids  = grid.cell_centroids;
-    auto getCellCentroid = KOKKOS_LAMBDA(int cell) {
+    auto getCellCentroid = [&](int cell) {
       vul::Point<double> p;
       p.x = cell_centroids(cell, 0);
       p.y = cell_centroids(cell, 1);
@@ -18,7 +46,7 @@ public:
     };
 
     auto points   = grid.points;
-    auto getPoint = KOKKOS_LAMBDA(int node) {
+    auto getPoint = [&](int node) {
       vul::Point<double> p;
       p.x = points(node, 0);
       p.y = points(node, 1);
@@ -27,7 +55,7 @@ public:
     };
 
     for (int node = 0; node < grid.node_to_cell.num_rows; node++) {
-      auto get_neighbor_weight = KOKKOS_LAMBDA(int i) { return 1.0; };
+      auto get_neighbor_weight = [&](int i) { return 1.0; };
       setLSQWeights(getCellCentroid, grid.node_to_cell(node),
                     get_neighbor_weight, getPoint(node), coeffs_host, grid.node_to_cell.rowStart(node));
     }
@@ -52,9 +80,10 @@ public:
     };
     Kokkos::parallel_for("clear-grads", num_stencils, clear);
 
-    auto calc_node_grad = KOKKOS_LAMBDA(int n) {
-      auto row = grid.node_to_cell(n);
-      for(int i = 0; i < row.size; i++){
+    auto n2c = grid.node_to_cell;
+    auto calc_node_grad = KOKKOS_CLASS_LAMBDA(int n) {
+      auto row = n2c(n);
+      for(int i = 0; i < row.size(); i++){
         int index = row.row_index_start + i;
         long neighbor = row(i);
         for(int e = 0; e < N; e++) {
@@ -80,9 +109,10 @@ public:
       grad(c, 2) = 0.0;
     }
 
-    auto calc_node_grad = KOKKOS_LAMBDA(int n) {
-      auto row = grid.node_to_cell(n);
-      for(int i = 0; i < row.size; i++){
+    auto n2c = grid.node_to_cell;
+    auto calc_node_grad = KOKKOS_CLASS_LAMBDA(int n) {
+      auto row = n2c(n);
+      for(int i = 0; i < row.size(); i++){
         int index = row.row_index_start + i;
         long neighbor = row(i);
         double d = get_field_value(neighbor);
@@ -95,34 +125,7 @@ public:
                          calc_node_grad);
   }
 
-  template <typename getPoint, typename getWeight, typename Point, typename Row>
-  void setLSQWeights(getPoint get_neighbor_point, Row row,
-                     getWeight get_neighbor_weight, const Point &center_point, Kokkos::View<double*[4]> coeffs_write, long write_offset) {
-    using Matrix = vul::DynamicMatrix<double>;
-    Matrix A(row.size, 4);
-    for (int i = 0; i < row.size; ++i) {
-      auto neighbor = row(i);
-      auto w        = get_neighbor_weight(neighbor);
-            auto dist = get_neighbor_point(neighbor) - center_point;
-//      auto p = get_neighbor_point(neighbor);
-      A(i, 0)   = w * 1.0;
-      A(i, 1)   = w * dist.x;
-      A(i, 2)   = w * dist.y;
-      A(i, 3)   = w * dist.z;
-    }
-    Matrix Q, R;
-    std::tie(Q, R) = vul::householderDecomposition(A);
-    auto Ainv = vul::calcPseudoInverse(Q, R);
-    VUL_ASSERT(Ainv.columns == row.size, "Ainv should be same size ("+std::to_string(Ainv.rows)+") as rows" + std::to_string(row.size) );
-    for (int i = 0; i < row.size; ++i) {
-      auto neighbor = row(i);
-      auto w           = get_neighbor_weight(neighbor);
-      coeffs_write(write_offset + i, 0) = w * Ainv(0, i);
-      coeffs_write(write_offset + i, 1) = w * Ainv(1, i);
-      coeffs_write(write_offset + i, 2) = w * Ainv(2, i);
-      coeffs_write(write_offset + i, 3) = w * Ainv(3, i);
-    }
-  }
 };
+
 
 }

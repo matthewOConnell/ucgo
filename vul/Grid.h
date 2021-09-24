@@ -144,7 +144,8 @@ public:
   FaceToNodes face_to_nodes;
   PointVector<double> cell_centroids;
 
-  std::vector<std::vector<int>> cell_face_neighbors;
+//  std::vector<std::vector<int>> cell_face_neighbors;
+  CompressedRowGraph<Space> cell_face_neighbors;
   CompressedRowGraph<Space> node_to_cell;
 
   void readPoints(FILE *fp);
@@ -152,7 +153,7 @@ public:
   void readCells(FILE *fp, CellType type);
   void readTags(FILE *fp, CellType type);
   void buildFaces();
-  std::vector<std::vector<int>> buildFaceNeighbors();
+  void buildFaceNeighbors();
 
   std::vector<std::set<int>> buildNodeToCell();
   std::vector<int> getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,

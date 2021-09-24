@@ -56,17 +56,18 @@ public:
   template <size_t N, size_t D>
   void averageNodeToFace(Kokkos::View<double *[N][D]> field,
                          Kokkos::View<double *[N][D]> face_field) {
+    auto grid = grid_device;
     auto average = KOKKOS_LAMBDA(int f) {
-      bool is_quad = grid_device.face_to_nodes(f, 3) != -1;
+      bool is_quad = grid.face_to_nodes(f, 3) != -1;
       for (int e = 0; e < N; e++) {
         for (int d = 0; d < D; d++) {
           double running_tally = 0.0;
           for (int i = 0; i < 3; i++) {
-            int node = grid_device.face_to_nodes(f, i);
+            int node = grid.face_to_nodes(f, i);
             running_tally += field(node, e, d);
           }
           if (is_quad) {
-            int node = grid_device.face_to_nodes(f, 3);
+            int node = grid.face_to_nodes(f, 3);
             running_tally += field(node, e, d);
             running_tally *= 0.25;
           } else {

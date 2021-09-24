@@ -468,10 +468,12 @@ template <typename Space> void vul::Grid<Space>::printSummary() const {
            hexs(p, 4), hexs(p, 5), hexs(p, 6),
            hexs(p, 7));
   }
-  first_few = std::min(3, int(cell_face_neighbors.size()));
+  first_few = std::min(3, int(cell_face_neighbors.num_rows));
   for (int c = 0; c < first_few; c++) {
     printf("cell %d face neighbors: ", c);
-    for (auto n : cell_face_neighbors[c]) {
+    auto neighbors = cell_face_neighbors(c);
+    for (int i = 0; i < neighbors.size(); i++) {
+      auto n = neighbors(i);
       printf("%d ", n);
     }
     printf("\n");
@@ -523,7 +525,7 @@ vul::CellType vul::Grid<Space>::cellType(int cell_id) const {
 }
 
 template <typename Space>
-std::vector<std::vector<int>> vul::Grid<Space>::buildFaceNeighbors() {
+void vul::Grid<Space>::buildFaceNeighbors() {
   std::vector<std::vector<int>> neighbors(numCells());
   std::vector<int> cell;
   for (int cell_id = 0; cell_id < numCells(); cell_id++) {
@@ -533,7 +535,8 @@ std::vector<std::vector<int>> vul::Grid<Space>::buildFaceNeighbors() {
     auto candidates    = getNodeNeighborsOfCell(cell, cell_id);
     neighbors[cell_id] = getFaceNeighbors(type, cell, candidates);
   }
-  return neighbors;
+
+  cell_face_neighbors = CompressedRowGraph<vul::Host>(neighbors);
 }
 
 template <typename Space> void vul::Grid<Space>::buildFaces() {
@@ -543,7 +546,7 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
   }
   Kokkos::Profiling::pushRegion("buildFaces");
   node_to_cell        = CompressedRowGraph<Space>(buildNodeToCell());
-  cell_face_neighbors = buildFaceNeighbors();
+  buildFaceNeighbors();
 
   {
     // This math for num faces doesn't work in parallel if there are volume
@@ -560,12 +563,12 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
   std::vector<int> cell_nodes;
   std::vector<int> face_nodes;
   for (int c = 0; c < numCells(); c++) {
-    int num_faces = int(cell_face_neighbors[c].size());
+    int num_faces = int(cell_face_neighbors(c).size());
     auto [type, index] = cellIdToTypeAndIndexPair(c);
     getCell(c, cell_nodes);
     Cell cell(type, cell_nodes);
     for (int face_number = 0; face_number < num_faces; face_number++) {
-      int neighbor       = cell_face_neighbors[c][face_number];
+      int neighbor       = cell_face_neighbors(c)(face_number);
       if (c < neighbor) {
         face_to_cell(next_face, 0) = c;
         face_to_cell(next_face, 1) = neighbor;

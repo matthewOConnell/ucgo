@@ -10,13 +10,16 @@ public:
   class Row {
   public:
     long row;
-    int size;
+    int _size;
     long row_index_start;
     const CompressedRowGraph<Space> *graph;
 
   public:
     KOKKOS_FUNCTION long operator()(int i) const {
       return graph->cols(row_index_start + i);
+    }
+    KOKKOS_FUNCTION int size() const {
+      return _size;
     }
   };
   // Template magic to determine if this object is on the Host or Device
@@ -36,6 +39,10 @@ public:
   KOKKOS_FUNCTION Row operator()(int r) const {
     int size = rowEnd(r) - rowStart(r);
     return Row{r, size, rowStart(r), this};
+  }
+
+  KOKKOS_FUNCTION long size() const {
+    return num_rows;
   }
 
   KOKKOS_FUNCTION long rowStart(int r) const { return rows(r); }
