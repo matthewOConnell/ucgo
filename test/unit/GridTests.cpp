@@ -144,6 +144,7 @@ TEST_CASE("Can compute grid metrics") {
 
   REQUIRE(grid.cell_centroids.extent_int(0) == grid.numCells());
   REQUIRE(grid.face_centroids.extent_int(0) == grid.numFaces());
+
 }
 
 TEST_CASE("Can convert to inf ordering") {
@@ -185,4 +186,27 @@ TEST_CASE("Can construct device grid from host grid"){
   REQUIRE(grid.count(vul::CellType::FACE) == face_to_nodes.extent(0));
 
   REQUIRE(grid_device.cell_face_neighbors.size() == grid.numCells());
+  auto face_centroids = vul::create_host_copy(grid_device.face_centroids);
+  REQUIRE(face_centroids.extent(0) == grid.numFaces());
+
+  vul::Point<double> lo = {200,200,200};
+  vul::Point<double> hi = {-200,-200,-200};
+
+  for(int f = 0; f < face_centroids.extent(0); f++){
+    lo.x = std::min(lo.x, face_centroids(f, 0));
+    lo.y = std::min(lo.y, face_centroids(f, 1));
+    lo.z = std::min(lo.z, face_centroids(f, 2));
+
+    hi.x = std::max(hi.x, face_centroids(f, 0));
+    hi.y = std::max(hi.y, face_centroids(f, 1));
+    hi.z = std::max(hi.z, face_centroids(f, 2));
+  }
+
+  REQUIRE(lo.x >= 0.0);
+  REQUIRE(lo.y >= 0.0);
+  REQUIRE(lo.z >= 0.0);
+
+  REQUIRE(hi.x <= 1.0);
+  REQUIRE(hi.y <= 1.0);
+  REQUIRE(hi.z <= 1.0);
 }
