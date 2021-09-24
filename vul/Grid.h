@@ -1,8 +1,22 @@
-//Copyright 2021 United States Government as represented by the Administrator of the National Aeronautics and Space Administration. No copyright is claimed in the United States under Title 17, U.S. Code. All Other Rights Reserved.
-//Third Party Software:
-//This software calls the following third party software, which is subject to the terms and conditions of its licensor, as applicable at the time of licensing.  Third party software is not bundled with this software, but may be available from the licensor.  License hyperlinks are provided here for information purposes only:  Kokkos v3.0, 3-clause BSD license, https://github.com/kokkos/kokkos, under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this third-party software.
-//The Unstructured CFD graph operations miniapp platform is licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0. 
-//Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+// Copyright 2021 United States Government as represented by the Administrator
+// of the National Aeronautics and Space Administration. No copyright is claimed
+// in the United States under Title 17, U.S. Code. All Other Rights Reserved.
+// Third Party Software:
+// This software calls the following third party software, which is subject to
+// the terms and conditions of its licensor, as applicable at the time of
+// licensing.  Third party software is not bundled with this software, but may
+// be available from the licensor.  License hyperlinks are provided here for
+// information purposes only:  Kokkos v3.0, 3-clause BSD license,
+// https://github.com/kokkos/kokkos, under the terms of Contract DE-NA0003525
+// with NTESS, the U.S. Government retains certain rights in this third-party
+// software. The Unstructured CFD graph operations miniapp platform is licensed
+// under the Apache License, Version 2.0 (the "License"); you may not use this
+// file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0. Unless required by
+// applicable law or agreed to in writing, software distributed under the
+// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, either express or implied. See the License for the specific
+// language governing permissions and limitations under the License.
 
 #pragma once
 #include "CompressedRowGraph.h"
@@ -32,8 +46,7 @@ private:
   std::vector<int> cell_nodes;
 };
 
-template <typename Space>
-class Grid {
+template <typename Space> class Grid {
   using space = typename Space::space; // really confusing; I know...
 public:
   template <typename T> using Vec1D       = Kokkos::View<T *, space>;
@@ -45,8 +58,7 @@ public:
 
   Grid(std::string filename);
   Grid(int ncells_x, int ncells_y, int ncells_z);
-  template <typename OtherSpace>
-  Grid(const Grid<OtherSpace>& g);
+  template <typename OtherSpace> Grid(const Grid<OtherSpace> &g);
 
   int count(CellType type) const;
   static int typeLength(CellType type);
@@ -56,56 +68,61 @@ public:
 
   Vec2D<int> getCellArray(CellType type);
 
-  KOKKOS_FUNCTION int boundaryCellsStart() const{
-      int num_volume_cells = numTets() + numPyramids() + numPrisms() + numHexs();
-      return num_volume_cells;
+  KOKKOS_FUNCTION int boundaryCellsStart() const {
+    int num_volume_cells = numTets() + numPyramids() + numPrisms() + numHexs();
+    return num_volume_cells;
   }
-  KOKKOS_FUNCTION int boundaryCellsEnd() const{
-      int num_total_cells = numTets() + numPyramids() + numPrisms() + numHexs() + numTris() + numQuads();
-      return num_total_cells;
+  KOKKOS_FUNCTION int boundaryCellsEnd() const {
+    int num_total_cells = numTets() + numPyramids() + numPrisms() + numHexs() +
+                          numTris() + numQuads();
+    return num_total_cells;
   }
 
-KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int>
-cellIdToTypeAndIndexPair(int cell_id) const {
-  if (cell_id < numTets())
-    return {TET, cell_id};
-  cell_id -= numTets();
-  if (cell_id < numPyramids())
-    return {PYRAMID, cell_id};
-  cell_id -= numPyramids();
-  if (cell_id < numPrisms())
-    return {PRISM, cell_id};
-  cell_id -= numPrisms();
-  if (cell_id < numHexs())
-    return {HEX, cell_id};
-  cell_id -= numHexs();
-  if (cell_id < numTris())
-    return {TRI, cell_id};
-  cell_id -= numTris();
-  if (cell_id < numQuads())
-    return {QUAD, cell_id};
-  cell_id -= numQuads();
-  //VUL_ASSERT(false, "Could not find type of cell_id " + std::to_string(orig_cell_id));
-  return {TRI, -1}; // return bad data.  Hopefully we find it quickly, we can't assert on device...
-}
+  KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int>
+  cellIdToTypeAndIndexPair(int cell_id) const {
+    if (cell_id < numTets())
+      return {TET, cell_id};
+    cell_id -= numTets();
+    if (cell_id < numPyramids())
+      return {PYRAMID, cell_id};
+    cell_id -= numPyramids();
+    if (cell_id < numPrisms())
+      return {PRISM, cell_id};
+    cell_id -= numPrisms();
+    if (cell_id < numHexs())
+      return {HEX, cell_id};
+    cell_id -= numHexs();
+    if (cell_id < numTris())
+      return {TRI, cell_id};
+    cell_id -= numTris();
+    if (cell_id < numQuads())
+      return {QUAD, cell_id};
+    cell_id -= numQuads();
+    // VUL_ASSERT(false, "Could not find type of cell_id " +
+    // std::to_string(orig_cell_id));
+    return {TRI, -1}; // return bad data.  Hopefully we find it quickly, we
+                      // can't assert on device...
+  }
   Point<double> getPoint(int node_id) const;
 
   void printSummary() const;
 
-KOKKOS_FUNCTION int numPoints() const { return points.extent_int(0); }
-KOKKOS_FUNCTION int numTets() const { return tets.extent_int(0); }
-KOKKOS_FUNCTION int numPyramids() const { return pyramids.extent_int(0); }
-KOKKOS_FUNCTION int numPrisms() const { return prisms.extent_int(0); }
-KOKKOS_FUNCTION int numHexs() const { return hexs.extent_int(0); }
-KOKKOS_FUNCTION int numTris() const { return tris.extent_int(0); }
-KOKKOS_FUNCTION int numQuads() const { return quads.extent_int(0); }
-KOKKOS_FUNCTION int numCells() const {
-  return numTets() + numPyramids() + numPrisms() + numHexs() + numTris() +
-         numQuads();
-}
-KOKKOS_FUNCTION int numVolumeCells() const {
-  return numTets() + numPyramids() + numPrisms() + numHexs();
-}
+  KOKKOS_FUNCTION int numPoints() const { return points.extent_int(0); }
+  KOKKOS_FUNCTION int numTets() const { return tets.extent_int(0); }
+  KOKKOS_FUNCTION int numPyramids() const { return pyramids.extent_int(0); }
+  KOKKOS_FUNCTION int numPrisms() const { return prisms.extent_int(0); }
+  KOKKOS_FUNCTION int numHexs() const { return hexs.extent_int(0); }
+  KOKKOS_FUNCTION int numTris() const { return tris.extent_int(0); }
+  KOKKOS_FUNCTION int numQuads() const { return quads.extent_int(0); }
+  KOKKOS_FUNCTION int numCells() const {
+    return numTets() + numPyramids() + numPrisms() + numHexs() + numTris() +
+           numQuads();
+  }
+  KOKKOS_FUNCTION int numVolumeCells() const {
+    return numTets() + numPyramids() + numPrisms() + numHexs();
+  }
+
+  KOKKOS_FUNCTION int numFaces() const { return face_to_cell.extent_int(0); }
 
   void getCell(int cell_id, int *cell_nodes) const;
   void getCell(int cell_id, std::vector<int> &cell_nodes) const;

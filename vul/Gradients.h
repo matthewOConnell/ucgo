@@ -103,12 +103,12 @@ public:
     for (int i = 0; i < row.size; ++i) {
       auto neighbor = row(i);
       auto w        = get_neighbor_weight(neighbor);
-      //      auto distance = get_neighbor_point(neighbor) - center_point;
-      auto p = get_neighbor_point(neighbor);
+            auto dist = get_neighbor_point(neighbor) - center_point;
+//      auto p = get_neighbor_point(neighbor);
       A(i, 0)   = w * 1.0;
-      A(i, 1)   = w * p.x;
-      A(i, 2)   = w * p.y;
-      A(i, 3)   = w * p.z;
+      A(i, 1)   = w * dist.x;
+      A(i, 2)   = w * dist.y;
+      A(i, 3)   = w * dist.z;
     }
     Matrix Q, R;
     std::tie(Q, R) = vul::householderDecomposition(A);
