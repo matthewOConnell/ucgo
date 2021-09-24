@@ -182,4 +182,6 @@ TEST_CASE("Can construct device grid from host grid"){
   auto face_to_nodes = create_mirror(grid_device.face_to_nodes);
   vul::force_copy(face_to_nodes, grid_device.face_to_nodes);
   REQUIRE(grid.count(vul::CellType::FACE) == face_to_nodes.extent(0));
+
+  REQUIRE(grid_device.cell_face_neighbors.size() == grid.numCells());
 }

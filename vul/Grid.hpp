@@ -246,11 +246,8 @@ vul::Grid<Space>::Grid(const Grid<OtherSpace>& g){
   face_to_nodes = FaceToNodes("face_to_nodes", g.face_to_nodes.extent(0));
   vul::force_copy(face_to_nodes, g.face_to_nodes);
 
-// These is not allocated on the device
-//  std::vector<std::vector<int>> cell_face_neighbors;
   node_to_cell = CompressedRowGraph<Space>(g.node_to_cell);
-
-
+  cell_face_neighbors = CompressedRowGraph<Space>(g.cell_face_neighbors);
 }
 
 template <typename Space>

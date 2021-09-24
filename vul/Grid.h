@@ -144,7 +144,6 @@ public:
   FaceToNodes face_to_nodes;
   PointVector<double> cell_centroids;
 
-//  std::vector<std::vector<int>> cell_face_neighbors;
   CompressedRowGraph<Space> cell_face_neighbors;
   CompressedRowGraph<Space> node_to_cell;
 
