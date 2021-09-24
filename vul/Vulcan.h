@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Grid.hpp"
+#include "Gradients.h"
 #include "Macros.h"
 #include "Residual.h"
 #include "Solution.h"
@@ -16,13 +17,23 @@ namespace vul {
 template <size_t NumEqns, size_t NumGasVars> class Vulcan {
 public:
   Vulcan(const vul::Grid<vul::Host>& grid_host_i, const vul::Grid<vul::Device>& grid_device_i)
-      : grid_host(grid_host_i), grid_device(grid_device_i), residual(&grid_device), Q("solution", grid_host.numCells()),
-        QG("gas-variables", grid_host.numCells()), R("residual", grid_host.numCells()) {
+      : grid_host(grid_host_i), grid_device(grid_device_i),
+        unweighted_least_squares(grid_host),
+        residual(&grid_device), Q("solution", grid_host.numCells()),
+        R("residual", grid_host.numCells()),
+        QG("gas-variables", grid_host.numCells()),
+        Q_grad("grad-Q", grid_host.numCells()),
+        QG_grad("grad-GQ", grid_host.numCells()) {
     setInitialConditions();
+  }
+  void calcGradients() {
+    unweighted_least_squares.calcMultipleGrads<NumEqns>(Q.d_view, grid_device, Q_grad);
+    unweighted_least_squares.calcMultipleGrads<NumGasVars>(QG.d_view, grid_device, QG_grad);
   }
   void solve(int num_iterations) {
     for (int n = 0; n < num_iterations; n++) {
-      residual.calc(Q, QG, R);
+      calcGradients();
+      residual.calc(Q, Q_grad, QG, QG_grad, R);
       double norm = calcNorm(R);
       printf("%d L2(R) = %e\n", n, norm);
       updateQ();
@@ -80,11 +91,14 @@ public:
 public:
   Grid<vul::Host> grid_host;
   Grid<vul::Device> grid_device;
+  LeastSquares unweighted_least_squares;
   Residual<NumEqns, NumGasVars> residual;
   StaticArray<NumEqns> Q_reference;
   SolutionArray<NumEqns> Q;
   SolutionArray<NumEqns> R;
   SolutionArray<NumGasVars> QG;
+  GradientArray<NumEqns, vul::Device::space> Q_grad;
+  GradientArray<NumGasVars, vul::Device::space> QG_grad;
   double dt = 10.0;
   int plot_freq = -1;
 

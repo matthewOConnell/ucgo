@@ -1,6 +1,6 @@
 #pragma once
-#include <vul/Grid.h>
-#include <vul/Grid.h>
+#include "Decompositions.h"
+#include "Grid.h"
 
 namespace vul {
 class LeastSquares {
@@ -36,6 +36,38 @@ public:
 
 public:
   Kokkos::View<double *[4], vul::Device::space> coeffs;
+
+  template <size_t N>
+  void calcMultipleGrads(Kokkos::View<double*[N]> fields,
+                     const vul::Grid<vul::Device>& grid,
+                     Kokkos::View<double*[N][3]> grad){
+
+    long num_stencils = grid.node_to_cell.num_rows;
+    auto clear = KOKKOS_LAMBDA(int c){
+      for(int e = 0; e < N; e++){
+        grad(c, e, 0) = 0.0;
+        grad(c, e, 1) = 0.0;
+        grad(c, e, 2) = 0.0;
+      }
+    };
+    Kokkos::parallel_for("clear-grads", num_stencils, clear);
+
+    auto calc_node_grad = KOKKOS_LAMBDA(int n) {
+      auto row = grid.node_to_cell(n);
+      for(int i = 0; i < row.size; i++){
+        int index = row.row_index_start + i;
+        long neighbor = row(i);
+        for(int e = 0; e < N; e++) {
+          double d = fields(neighbor, e);
+          grad(n, e, 0) += coeffs(index, 1) * d;
+          grad(n, e, 1) += coeffs(index, 2) * d;
+          grad(n, e, 2) += coeffs(index, 3) * d;
+        }
+      }
+    };
+    Kokkos::parallel_for("calc grad", grid.node_to_cell.num_rows,
+                         calc_node_grad);
+  }
 
   template <typename GetFieldValue>
   void calcGrad(GetFieldValue get_field_value,
