@@ -243,9 +243,13 @@ vul::Grid<Space>::Grid(const Grid<OtherSpace>& g){
   cell_centroids = PointVector<double>("cell_centroids", g.cell_centroids.extent(0));
   vul::force_copy(cell_centroids, g.cell_centroids);
 
+  face_to_nodes = FaceToNodes("face_to_nodes", g.face_to_nodes.extent(0));
+  vul::force_copy(face_to_nodes, g.face_to_nodes);
+
 // These is not allocated on the device
 //  std::vector<std::vector<int>> cell_face_neighbors;
   node_to_cell = CompressedRowGraph<Space>(g.node_to_cell);
+
 
 }
 
@@ -548,18 +552,20 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
                     4 * numTets() + numTris() + numQuads();
     num_faces /= 2;
     face_to_cell = FaceToCells("face_to_cell", num_faces);
+    face_to_nodes = FaceToNodes("face_to_nodes", num_faces);
     face_area    = FaceArea("face_area", num_faces);
   }
 
   int next_face = 0;
   std::vector<int> cell_nodes;
+  std::vector<int> face_nodes;
   for (int c = 0; c < numCells(); c++) {
     int num_faces = int(cell_face_neighbors[c].size());
+    auto [type, index] = cellIdToTypeAndIndexPair(c);
+    getCell(c, cell_nodes);
+    Cell cell(type, cell_nodes);
     for (int face_number = 0; face_number < num_faces; face_number++) {
       int neighbor       = cell_face_neighbors[c][face_number];
-      auto [type, index] = cellIdToTypeAndIndexPair(c);
-      getCell(c, cell_nodes);
-      Cell cell(type, cell_nodes);
       if (c < neighbor) {
         face_to_cell(next_face, 0) = c;
         face_to_cell(next_face, 1) = neighbor;
@@ -567,6 +573,15 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
         face_area(next_face, 0)    = area.x;
         face_area(next_face, 1)    = area.y;
         face_area(next_face, 2)    = area.z;
+        auto face_nodes = cell.face(face_number);
+        face_to_nodes(next_face, 0) = face_nodes[0];
+        face_to_nodes(next_face, 1) = face_nodes[1];
+        face_to_nodes(next_face, 2) = face_nodes[2];
+        if(face_nodes.size() == 4){
+          face_to_nodes(next_face, 3) = face_nodes[3];
+        } else {
+          face_to_nodes(next_face, 3) = -1; // quad
+        }
         next_face++;
       }
     }

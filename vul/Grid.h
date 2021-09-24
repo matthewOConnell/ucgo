@@ -40,6 +40,7 @@ public:
   template <typename T> using Vec2D       = Kokkos::View<T **, space>;
   template <typename T> using PointVector = Kokkos::View<T *[3], space>;
   using FaceToCells                       = Kokkos::View<int *[2], space>;
+  using FaceToNodes                       = Kokkos::View<int *[4], space>;
   using FaceArea                          = Kokkos::View<double *[3], space>;
 
   Grid(std::string filename);
@@ -123,6 +124,7 @@ public:
   Vec1D<int> quad_tags;
   Vec1D<double> cell_volume;
   FaceToCells face_to_cell;
+  FaceToNodes face_to_nodes;
   PointVector<double> cell_centroids;
 
   std::vector<std::vector<int>> cell_face_neighbors;

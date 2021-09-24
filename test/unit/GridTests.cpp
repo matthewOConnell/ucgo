@@ -174,3 +174,12 @@ TEST_CASE("Can convert to inf ordering") {
   REQUIRE(grid.getVulCellIdFromInfId(16) == 2);
   REQUIRE(grid.getVulCellIdFromInfId(17) == 3);
 }
+
+TEST_CASE("Can construct device grid from host grid"){
+  vul::Grid<vul::Host> grid(10, 10, 10);
+  auto grid_device = vul::Grid<vul::Device>(grid);
+
+  auto face_to_nodes = create_mirror(grid_device.face_to_nodes);
+  vul::force_copy(face_to_nodes, grid_device.face_to_nodes);
+  REQUIRE(grid.count(vul::CellType::FACE) == face_to_nodes.extent(0));
+}
