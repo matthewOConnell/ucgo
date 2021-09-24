@@ -143,6 +143,7 @@ TEST_CASE("Can compute grid metrics") {
   REQUIRE(grid.cell_volume(3) == 1.0);        // hex
 
   REQUIRE(grid.cell_centroids.extent_int(0) == grid.numCells());
+  REQUIRE(grid.face_centroids.extent_int(0) == grid.numFaces());
 }
 
 TEST_CASE("Can convert to inf ordering") {

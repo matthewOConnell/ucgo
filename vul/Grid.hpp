@@ -213,26 +213,26 @@ private:
   double dx, dy, dz;
 };
 
-template<typename Space>
+template <typename Space>
 template <typename OtherSpace>
-vul::Grid<Space>::Grid(const Grid<OtherSpace>& g){
+vul::Grid<Space>::Grid(const Grid<OtherSpace> &g) {
   points = PointVector<double>("points", g.points.extent(0));
   vul::force_copy(points, g.points);
   face_area = FaceArea("face_area", g.face_area.extent(0));
   vul::force_copy(face_area, g.face_area);
-  tris         = Vec2D<int>("tris", g.tris.extent(0), 3);
+  tris = Vec2D<int>("tris", g.tris.extent(0), 3);
   vul::force_copy(tris, g.tris);
-  quads        = Vec2D<int>("quads", g.quads.extent(0), 4);
+  quads = Vec2D<int>("quads", g.quads.extent(0), 4);
   vul::force_copy(quads, g.quads);
-  tets         = Vec2D<int>("tets", g.tets.extent(0), 4);
+  tets = Vec2D<int>("tets", g.tets.extent(0), 4);
   vul::force_copy(tets, g.tets);
-  pyramids     = Vec2D<int>("pyramids", g.pyramids.extent(0), 5);
+  pyramids = Vec2D<int>("pyramids", g.pyramids.extent(0), 5);
   vul::force_copy(pyramids, g.pyramids);
-  prisms       = Vec2D<int>("prisms", g.prisms.extent(0), 6);
+  prisms = Vec2D<int>("prisms", g.prisms.extent(0), 6);
   vul::force_copy(prisms, g.prisms);
-  hexs         = Vec2D<int>("hexs", g.hexs.extent(0), 8);
+  hexs = Vec2D<int>("hexs", g.hexs.extent(0), 8);
   vul::force_copy(hexs, g.hexs);
-  tri_tags  = Vec1D<int>("tri_tags", g.tri_tags.extent(0));
+  tri_tags = Vec1D<int>("tri_tags", g.tri_tags.extent(0));
   vul::force_copy(tri_tags, g.tri_tags);
   quad_tags = Vec1D<int>("quad_tags", g.quad_tags.extent(0));
   vul::force_copy(quad_tags, g.quad_tags);
@@ -240,13 +240,14 @@ vul::Grid<Space>::Grid(const Grid<OtherSpace>& g){
   vul::force_copy(cell_volume, g.cell_volume);
   face_to_cell = FaceToCells("face_to_cells", g.face_to_cell.extent(0));
   vul::force_copy(face_to_cell, g.face_to_cell);
-  cell_centroids = PointVector<double>("cell_centroids", g.cell_centroids.extent(0));
+  cell_centroids =
+      PointVector<double>("cell_centroids", g.cell_centroids.extent(0));
   vul::force_copy(cell_centroids, g.cell_centroids);
 
   face_to_nodes = FaceToNodes("face_to_nodes", g.face_to_nodes.extent(0));
   vul::force_copy(face_to_nodes, g.face_to_nodes);
 
-  node_to_cell = CompressedRowGraph<Space>(g.node_to_cell);
+  node_to_cell        = CompressedRowGraph<Space>(g.node_to_cell);
   cell_face_neighbors = CompressedRowGraph<Space>(g.cell_face_neighbors);
 }
 
@@ -423,46 +424,41 @@ template <typename Space> void vul::Grid<Space>::printSummary() const {
 
   int first_few = std::min(3, points.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("point %d: %e %e %e\n", p, points(p, 0), points(p, 1),
-           points(p, 2));
+    printf("point %d: %e %e %e\n", p, points(p, 0), points(p, 1), points(p, 2));
   }
 
   first_few = std::min(3, tris.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("tri %d: %d %d %d\n", p, tris(p, 0), tris(p, 1),
-           tris(p, 2));
+    printf("tri %d: %d %d %d\n", p, tris(p, 0), tris(p, 1), tris(p, 2));
   }
 
   first_few = std::min(3, quads.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("quad %d: %d %d %d %d\n", p, quads(p, 0), quads(p, 1),
-           quads(p, 2), quads(p, 3));
+    printf("quad %d: %d %d %d %d\n", p, quads(p, 0), quads(p, 1), quads(p, 2),
+           quads(p, 3));
   }
 
   first_few = std::min(3, tets.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("tet %d: %d %d %d %d\n", p, tets(p, 0), tets(p, 1),
-           tets(p, 2), tets(p, 3));
+    printf("tet %d: %d %d %d %d\n", p, tets(p, 0), tets(p, 1), tets(p, 2),
+           tets(p, 3));
   }
 
   first_few = std::min(3, pyramids.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("pyramid %d: %d %d %d %d %d\n", p, pyramids(p, 0),
-           pyramids(p, 1), pyramids(p, 2), pyramids(p, 3),
-           pyramids(p, 4));
+    printf("pyramid %d: %d %d %d %d %d\n", p, pyramids(p, 0), pyramids(p, 1),
+           pyramids(p, 2), pyramids(p, 3), pyramids(p, 4));
   }
 
   first_few = std::min(3, prisms.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("prism %d: %d %d %d %d %d %d\n", p, prisms(p, 0),
-           prisms(p, 1), prisms(p, 2), prisms(p, 3),
-           prisms(p, 4), prisms(p, 5));
+    printf("prism %d: %d %d %d %d %d %d\n", p, prisms(p, 0), prisms(p, 1),
+           prisms(p, 2), prisms(p, 3), prisms(p, 4), prisms(p, 5));
   }
   first_few = std::min(3, hexs.extent_int(0));
   for (int p = 0; p < first_few; p++) {
-    printf("hex %d: %d %d %d %d %d %d %d %d\n", p, hexs(p, 0),
-           hexs(p, 1), hexs(p, 2), hexs(p, 3),
-           hexs(p, 4), hexs(p, 5), hexs(p, 6),
+    printf("hex %d: %d %d %d %d %d %d %d %d\n", p, hexs(p, 0), hexs(p, 1),
+           hexs(p, 2), hexs(p, 3), hexs(p, 4), hexs(p, 5), hexs(p, 6),
            hexs(p, 7));
   }
   first_few = std::min(3, int(cell_face_neighbors.num_rows));
@@ -478,8 +474,7 @@ template <typename Space> void vul::Grid<Space>::printSummary() const {
 
   first_few = std::min(3, face_to_cell.extent_int(0));
   for (int f = 0; f < first_few; f++) {
-    printf("face %d %d\n", face_to_cell(f, 0),
-           face_to_cell(f, 1));
+    printf("face %d %d\n", face_to_cell(f, 0), face_to_cell(f, 1));
   }
 }
 
@@ -521,8 +516,7 @@ vul::CellType vul::Grid<Space>::cellType(int cell_id) const {
   return pair.first;
 }
 
-template <typename Space>
-void vul::Grid<Space>::buildFaceNeighbors() {
+template <typename Space> void vul::Grid<Space>::buildFaceNeighbors() {
   std::vector<std::vector<int>> neighbors(numCells());
   std::vector<int> cell;
   for (int cell_id = 0; cell_id < numCells(); cell_id++) {
@@ -542,7 +536,7 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
                "Cannot build faces using a device grid");
   }
   Kokkos::Profiling::pushRegion("buildFaces");
-  node_to_cell        = CompressedRowGraph<Space>(buildNodeToCell());
+  node_to_cell = CompressedRowGraph<Space>(buildNodeToCell());
   buildFaceNeighbors();
 
   {
@@ -551,37 +545,40 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
     int num_faces = 6 * numHexs() + 5 * numPyramids() + 5 * numPrisms() +
                     4 * numTets() + numTris() + numQuads();
     num_faces /= 2;
-    face_to_cell = FaceToCells("face_to_cell", num_faces);
-    face_to_nodes = FaceToNodes("face_to_nodes", num_faces);
-    face_area    = FaceArea("face_area", num_faces);
+    face_to_cell   = FaceToCells("face_to_cell", num_faces);
+    face_to_nodes  = FaceToNodes("face_to_nodes", num_faces);
+    face_area      = FaceArea("face_area", num_faces);
+    face_centroids = PointVector<double>("face_centroids", num_faces);
   }
 
   int next_face = 0;
   std::vector<int> cell_nodes;
   std::vector<int> face_nodes;
   for (int c = 0; c < numCells(); c++) {
-    int num_faces = int(cell_face_neighbors(c).size());
+    int num_faces      = int(cell_face_neighbors(c).size());
     auto [type, index] = cellIdToTypeAndIndexPair(c);
     getCell(c, cell_nodes);
     Cell cell(type, cell_nodes);
     for (int face_number = 0; face_number < num_faces; face_number++) {
-      int neighbor       = cell_face_neighbors(c)(face_number);
+      int neighbor = cell_face_neighbors(c)(face_number);
       if (c < neighbor) {
-        face_to_cell(next_face, 0) = c;
-        face_to_cell(next_face, 1) = neighbor;
-        Point<double> area         = calcFaceArea(cell.face(face_number));
-        face_area(next_face, 0)    = area.x;
-        face_area(next_face, 1)    = area.y;
-        face_area(next_face, 2)    = area.z;
-        auto face_nodes = cell.face(face_number);
+        face_to_cell(next_face, 0)  = c;
+        face_to_cell(next_face, 1)  = neighbor;
+        Point<double> area          = calcFaceArea(cell.face(face_number));
+        face_area(next_face, 0)     = area.x;
+        face_area(next_face, 1)     = area.y;
+        face_area(next_face, 2)     = area.z;
+        auto face_nodes             = cell.face(face_number);
         face_to_nodes(next_face, 0) = face_nodes[0];
         face_to_nodes(next_face, 1) = face_nodes[1];
         face_to_nodes(next_face, 2) = face_nodes[2];
-        if(face_nodes.size() == 4){
+        if (face_nodes.size() == 4) {
           face_to_nodes(next_face, 3) = face_nodes[3];
         } else {
           face_to_nodes(next_face, 3) = -1; // quad
         }
+        auto centroid = calcFaceCentroid(cell.face(face_number));
+        face_centroids(next_face, 0) =
         next_face++;
       }
     }
@@ -678,16 +675,15 @@ vul::Grid<Space>::getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
   }
   int neighbor_count = 0;
   for (int node : cell_nodes) {
-    int row_length =
-        node_to_cell.rows(node + 1) - node_to_cell.rows(node);
+    int row_length = node_to_cell.rows(node + 1) - node_to_cell.rows(node);
     neighbor_count += row_length;
   }
 
   std::vector<int> neighbors;
   neighbors.reserve(neighbor_count);
   for (int node : cell_nodes) {
-    for (int i = node_to_cell.rows(node);
-         i < node_to_cell.rows(node + 1); i++) {
+    for (int i = node_to_cell.rows(node); i < node_to_cell.rows(node + 1);
+         i++) {
       int c = node_to_cell.cols(i);
       if (c != cell_id and not isIn(neighbors, c)) {
         neighbors.push_back(c);
@@ -766,6 +762,28 @@ vul::Grid<Space>::calcFaceArea(const std::vector<int> &face_nodes) const {
 
   return area;
 }
+template <typename Space>
+vul::Point<double>
+vul::Grid<Space>::calcFaceCentroid(const std::vector<int> &face_nodes) const {
+  if (not std::is_same<Space, vul::Host>::value) {
+    VUL_ASSERT((std::is_same<Space, vul::Host>::value),
+               "Cannot calcFaceArea using a device grid");
+  }
+  Point<double> centroid = {0.0,0.0,0.0};
+  bool is_quad = face_nodes.size() == 4;
+  for (int i = 0; i < 4; i++) {
+    if (i == 3 and not is_quad)
+      break; // break out for triangles;
+    int n = face_nodes[i];
+    auto p = getPoint(n);
+    centroid = centroid + p;
+  }
+  if(is_quad)
+    centroid = centroid * 0.25;
+  else
+    centroid = centroid * (1.0/3.0);
+  return centroid;
+}
 template <typename Space> void vul::Grid<Space>::computeCellVolumes() {
   int offset = 0;
   if (not std::is_same<Space, vul::Host>::value) {
@@ -805,6 +823,11 @@ template <typename Space> void vul::Grid<Space>::computeCellVolumes() {
 template <typename Space>
 vul::Point<double> vul::Grid<Space>::getPoint(int n) const {
   return Point<double>{points(n, 0), points(n, 1), points(n, 2)};
+}
+template <typename Space>
+vul::Point<double> vul::Grid<Space>::getCentroid(int c) const {
+  return Point<double>{cell_centroids(c, 0), cell_centroids(c, 1),
+                       cell_centroids(c, 2)};
 }
 template <typename Space> double vul::Grid<Space>::computeTetVolume(int t) {
   auto a   = getPoint(tets(t, 0));
@@ -962,10 +985,10 @@ void vul::Grid<Space>::setCartesianCells(int n_cells_x, int n_cells_y,
   // front
   for (int j = 0; j < n_cells_y; j++) {
     for (int k = 0; k < n_cells_z; k++) {
-      quads(quad_index, 0) = block.convert_ijk_ToNodeId(0, j, k);
-      quads(quad_index, 1) = block.convert_ijk_ToNodeId(0, j, k + 1);
-      quads(quad_index, 2) = block.convert_ijk_ToNodeId(0, j + 1, k + 1);
-      quads(quad_index, 3) = block.convert_ijk_ToNodeId(0, j + 1, k);
+      quads(quad_index, 0)    = block.convert_ijk_ToNodeId(0, j, k);
+      quads(quad_index, 1)    = block.convert_ijk_ToNodeId(0, j, k + 1);
+      quads(quad_index, 2)    = block.convert_ijk_ToNodeId(0, j + 1, k + 1);
+      quads(quad_index, 3)    = block.convert_ijk_ToNodeId(0, j + 1, k);
       quad_tags(quad_index++) = 2;
     }
   }
@@ -974,10 +997,10 @@ void vul::Grid<Space>::setCartesianCells(int n_cells_x, int n_cells_y,
   int num_x = n_cells_x;
   for (int j = 0; j < n_cells_y; j++) {
     for (int k = 0; k < n_cells_z; k++) {
-      quads(quad_index, 0) = block.convert_ijk_ToNodeId(num_x, j, k);
-      quads(quad_index, 1) = block.convert_ijk_ToNodeId(num_x, j + 1, k);
-      quads(quad_index, 2) = block.convert_ijk_ToNodeId(num_x, j + 1, k + 1);
-      quads(quad_index, 3) = block.convert_ijk_ToNodeId(num_x, j, k + 1);
+      quads(quad_index, 0)    = block.convert_ijk_ToNodeId(num_x, j, k);
+      quads(quad_index, 1)    = block.convert_ijk_ToNodeId(num_x, j + 1, k);
+      quads(quad_index, 2)    = block.convert_ijk_ToNodeId(num_x, j + 1, k + 1);
+      quads(quad_index, 3)    = block.convert_ijk_ToNodeId(num_x, j, k + 1);
       quad_tags(quad_index++) = 4;
     }
   }
@@ -985,10 +1008,10 @@ void vul::Grid<Space>::setCartesianCells(int n_cells_x, int n_cells_y,
   // right
   for (int i = 0; i < n_cells_x; i++) {
     for (int k = 0; k < n_cells_z; k++) {
-      quads(quad_index, 0) = block.convert_ijk_ToNodeId(i, 0, k);
-      quads(quad_index, 1) = block.convert_ijk_ToNodeId(i + 1, 0, k);
-      quads(quad_index, 2) = block.convert_ijk_ToNodeId(i + 1, 0, k + 1);
-      quads(quad_index, 3) = block.convert_ijk_ToNodeId(i, 0, k + 1);
+      quads(quad_index, 0)    = block.convert_ijk_ToNodeId(i, 0, k);
+      quads(quad_index, 1)    = block.convert_ijk_ToNodeId(i + 1, 0, k);
+      quads(quad_index, 2)    = block.convert_ijk_ToNodeId(i + 1, 0, k + 1);
+      quads(quad_index, 3)    = block.convert_ijk_ToNodeId(i, 0, k + 1);
       quad_tags(quad_index++) = 3;
     }
   }
@@ -997,10 +1020,10 @@ void vul::Grid<Space>::setCartesianCells(int n_cells_x, int n_cells_y,
   int num_y = n_cells_y;
   for (int i = 0; i < n_cells_x; i++) {
     for (int k = 0; k < n_cells_z; k++) {
-      quads(quad_index, 0) = block.convert_ijk_ToNodeId(i, num_y, k);
-      quads(quad_index, 1) = block.convert_ijk_ToNodeId(i, num_y, k + 1);
-      quads(quad_index, 2) = block.convert_ijk_ToNodeId(i + 1, num_y, k + 1);
-      quads(quad_index, 3) = block.convert_ijk_ToNodeId(i + 1, num_y, k);
+      quads(quad_index, 0)    = block.convert_ijk_ToNodeId(i, num_y, k);
+      quads(quad_index, 1)    = block.convert_ijk_ToNodeId(i, num_y, k + 1);
+      quads(quad_index, 2)    = block.convert_ijk_ToNodeId(i + 1, num_y, k + 1);
+      quads(quad_index, 3)    = block.convert_ijk_ToNodeId(i + 1, num_y, k);
       quad_tags(quad_index++) = 5;
     }
   }

@@ -103,7 +103,8 @@ public:
     return {TRI, -1}; // return bad data.  Hopefully we find it quickly, we
                       // can't assert on device...
   }
-  Point<double> getPoint(int node_id) const;
+  KOKKOS_FUNCTION Point<double> getPoint(int node_id) const;
+  KOKKOS_FUNCTION Point<double> getCentroid(int cell_id) const;
 
   void printSummary() const;
 
@@ -143,6 +144,7 @@ public:
   FaceToCells face_to_cell;
   FaceToNodes face_to_nodes;
   PointVector<double> cell_centroids;
+  PointVector<double> face_centroids;
 
   CompressedRowGraph<Space> cell_face_neighbors;
   CompressedRowGraph<Space> node_to_cell;
@@ -165,6 +167,7 @@ public:
   bool cellContainsFace(const std::vector<int> &neighbor_nodes,
                         const std::vector<int> &face_nodes);
   Point<double> calcFaceArea(const std::vector<int> &face_nodes) const;
+  Point<double> calcFaceCentroid(const std::vector<int> &face_nodes) const;
   void computeCellVolumes();
   double computeTetVolume(const Point<double> &a, const Point<double> &b,
                           const Point<double> &c, const Point<double> &d);
