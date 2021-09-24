@@ -168,9 +168,10 @@ public:
 
     auto Q_ref    = Q_reference;
 
+    auto Q_d = Q_device;
     auto update_boundary = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q_device(c, e) = Q_ref[e];
+        Q_d(c, e) = Q_ref[e];
       }
     };
     Kokkos::parallel_for("set initial condition boundary",
@@ -180,9 +181,9 @@ public:
 
     auto update_interior = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q_device(c, e) = Q_ref[e];
+        Q_d(c, e) = Q_ref[e];
       }
-      Q_device(c, 1) =
+      Q_d(c, 1) =
           1.1 * Q_ref[1]; // perturb first density to give non zero res
     };
     Kokkos::parallel_for("set initial condition interior",
@@ -196,9 +197,10 @@ public:
     auto Q_ref = Q_reference; // make a local copy to be transferred to the GPU
     int boundary_cell_start = grid_host.boundaryCellsStart();
     int boundary_cell_end   = grid_host.boundaryCellsEnd();
+    auto Q_d = Q_device;
     auto set                = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q_device(c, e) = Q_ref[e];
+        Q_d(c, e) = Q_ref[e];
       }
     };
 
@@ -222,14 +224,16 @@ public:
   }
 
   void calcGasVariables() {
+    auto QG_d = QG_device;
+    auto Q_d = Q_device;
     auto calc      = KOKKOS_LAMBDA(int c) {
-      QG_device(c, 0) = 1.4;
+      QG_d(c, 0) = 1.4;
       StaticArray<NumEqns> q;
       for (int e = 0; e < NumEqns; e++) {
-        q[e] = Q_device(c, e);
+        q[e] = Q_d(c, e);
       }
-      double press    = perfect_gas::calcPressure(q, QG_device(c, 0));
-      QG_device(c, 1) = press;
+      double press    = perfect_gas::calcPressure(q, QG_d(c, 0));
+      QG_d(c, 1) = press;
     };
 
     Kokkos::parallel_for("calcGasVariables", grid_host.numCells(), calc);
