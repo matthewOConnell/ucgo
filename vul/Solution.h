@@ -8,7 +8,7 @@
 #include <Kokkos_DualView.hpp>
 
 namespace vul {
-template <int N> using SolutionArray = Kokkos::DualView<double *[N]>;
+template <int N, typename Space> using SolutionArray = Kokkos::View<double *[N], Space>;
 template <int N> using StaticArray = Kokkos::Array<double, N>;
 template <int N> using StaticIntArray = Kokkos::Array<int, N>;
 template <int N, typename Space> using GradientArray = Kokkos::View<double *[N][3], Space>;

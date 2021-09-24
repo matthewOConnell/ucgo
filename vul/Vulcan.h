@@ -34,9 +34,11 @@ public:
          const vul::Grid<vul::Device> &grid_device_i)
       : grid_host(grid_host_i), grid_device(grid_device_i),
         unweighted_least_squares(grid_host), residual(&grid_device),
-        Q("solution", grid_host.numCells()),
+        Q_device("solution", grid_host.numCells()),
+        Q_host("solution", grid_host.numCells()),
         R("residual", grid_host.numCells()),
-        QG("gas-variables", grid_host.numCells()),
+        QG_host("gas-variables", grid_host.numCells()),
+        QG_device("gas-variables", grid_host.numCells()),
         Q_grad_nodes("grad-Q-nodes", grid_host.numCells()),
         QG_grad_nodes("grad-GQ-nodes", grid_host.numCells()),
         Q_grad_faces("grad-Q-faces", grid_host.numFaces()),
@@ -44,10 +46,10 @@ public:
     setInitialConditions();
   }
   void calcGradients() {
-    unweighted_least_squares.calcMultipleGrads<NumEqns>(Q.d_view, grid_device,
+    unweighted_least_squares.calcMultipleGrads<NumEqns>(Q_device, grid_device,
                                                         Q_grad_nodes);
     unweighted_least_squares.calcMultipleGrads<NumGasVars>(
-        QG.d_view, grid_device, QG_grad_nodes);
+        QG_device, grid_device, QG_grad_nodes);
 
     averageNodeToFace<NumEqns, 3>(Q_grad_nodes, Q_grad_faces);
     averageNodeToFace<NumGasVars, 3>(QG_grad_nodes, QG_grad_faces);
@@ -84,7 +86,7 @@ public:
   void solve(int num_iterations) {
     for (int n = 0; n < num_iterations; n++) {
       calcGradients();
-      residual.calc(Q, Q_grad_nodes, QG, QG_grad_nodes, R);
+      residual.calc(Q_device, Q_grad_nodes, QG_device, QG_grad_nodes, R);
       double norm = calcNorm(R);
       printf("%d L2(R) = %e\n", n, norm);
       updateQ();
@@ -99,18 +101,15 @@ public:
   }
 
   void syncToHost() {
-    Kokkos::deep_copy(Q.h_view, Q.d_view);
-    Kokkos::deep_copy(QG.h_view, QG.d_view);
-    Kokkos::deep_copy(R.h_view, R.d_view);
+    vul::force_copy(Q_host, Q_host);
+    vul::force_copy(QG_host, QG_host);
   }
   void updateQ() const {
-    auto Q_device  = Q.d_view;
-    auto R_device  = R.d_view;
     auto dt_device = dt;
     auto update    = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
-        Q_device(c, e) = Q_device(c, e) - dt_device * R_device(c, e);
-        R_device(c, e) = 0.0;
+        Q_device(c, e) = Q_device(c, e) - dt_device * R(c, e);
+        R(c, e) = 0.0;
       }
     };
 
@@ -118,7 +117,7 @@ public:
   }
 
   void writeCSV(std::string filename) {
-    Kokkos::deep_copy(Q.h_view, Q.d_view);
+    vul::force_copy(Q_host, Q_device);
     FILE *fp = fopen(filename.c_str(), "w");
     VUL_ASSERT(fp != nullptr, "Could not open file for writing: " + filename);
     if (NumEqns == 5) {
@@ -132,7 +131,7 @@ public:
     for (int inf_id = 0; inf_id < grid_host.numCells(); inf_id++) {
       int vul_id = grid_host.getVulCellIdFromInfId(inf_id);
       for (int e = 0; e < NumEqns; e++) {
-        fprintf(fp, "%e, ", Q.h_view(vul_id, e));
+        fprintf(fp, "%e, ", Q_host(vul_id, e));
       }
       fprintf(fp, "\n");
     }
@@ -145,13 +144,17 @@ public:
   LeastSquares unweighted_least_squares;
   Residual<NumEqns, NumGasVars> residual;
   StaticArray<NumEqns> Q_reference;
-  SolutionArray<NumEqns> Q;
-  SolutionArray<NumEqns> R;
-  SolutionArray<NumGasVars> QG;
+  SolutionArray<NumEqns, vul::Device::space> Q_device;
+  SolutionArray<NumGasVars, vul::Device::space> QG_device;
+  SolutionArray<NumEqns, vul::Host::space> Q_host;
+  SolutionArray<NumGasVars, vul::Host::space> QG_host;
+
   GradientArray<NumEqns, vul::Device::space> Q_grad_nodes;
   GradientArray<NumGasVars, vul::Device::space> QG_grad_nodes;
   GradientArray<NumEqns, vul::Device::space> Q_grad_faces;
   GradientArray<NumGasVars, vul::Device::space> QG_grad_faces;
+
+  SolutionArray<NumEqns, vul::Device::space> R;
   double dt     = 10.0;
   int plot_freq = -1;
 
@@ -163,7 +166,6 @@ public:
     Q_reference[3] = 0.000000;
     Q_reference[4] = 2.255499;
 
-    auto Q_device = Q.d_view;
     auto Q_ref    = Q_reference;
 
     auto update_boundary = KOKKOS_LAMBDA(int c) {
@@ -185,14 +187,12 @@ public:
     };
     Kokkos::parallel_for("set initial condition interior",
                          grid_host.numVolumeCells(), update_interior);
-
     Kokkos::Profiling::popRegion();
 
     setBCs();
     calcGasVariables();
   }
   void setBCs() {
-    auto Q_device = Q.d_view;
     auto Q_ref = Q_reference; // make a local copy to be transferred to the GPU
     int boundary_cell_start = grid_host.boundaryCellsStart();
     int boundary_cell_end   = grid_host.boundaryCellsEnd();
@@ -207,9 +207,8 @@ public:
         set);
   }
 
-  double calcNorm(const SolutionArray<NumEqns> &A_in) {
+  double calcNorm(const SolutionArray<NumEqns, vul::Device::space> &A) {
     double norm    = 0.0;
-    auto A         = A_in.d_view;
     auto calc_norm = KOKKOS_LAMBDA(int c, double &norm) {
       for (int e = 0; e < NumEqns; e++) {
         norm += A(c, e) * A(c, e);
@@ -223,8 +222,6 @@ public:
   }
 
   void calcGasVariables() {
-    auto QG_device = QG.d_view;
-    auto Q_device  = Q.d_view;
     auto calc      = KOKKOS_LAMBDA(int c) {
       QG_device(c, 0) = 1.4;
       StaticArray<NumEqns> q;
