@@ -70,7 +70,7 @@ public:
                      const vul::Grid<vul::Device>& grid,
                      Kokkos::View<double*[N][3]> grad){
 
-    long num_stencils = grid.node_to_cell.num_rows;
+    long num_nodes    = grid.node_to_cell.num_rows;
     auto clear = KOKKOS_LAMBDA(int c){
       for(int e = 0; e < N; e++){
         grad(c, e, 0) = 0.0;
@@ -78,32 +78,31 @@ public:
         grad(c, e, 2) = 0.0;
       }
     };
-    Kokkos::parallel_for("clear-grads", num_stencils, clear);
+    Kokkos::parallel_for("clear-grads", num_nodes, clear);
 
     auto n2c = grid.node_to_cell;
-    auto calc_node_grad = KOKKOS_CLASS_LAMBDA(int n) {
+    auto calc_node_grad = KOKKOS_CLASS_LAMBDA(int n, int e, int dir) {
       auto row = n2c(n);
       for(int i = 0; i < row.size(); i++){
         int index = row.row_index_start + i;
         long neighbor = row(i);
-        for(int e = 0; e < N; e++) {
+        // for(int e = 0; e < N; e++) {
           double d = fields(neighbor, e);
-          grad(n, e, 0) += coeffs(index, 1) * d;
-          grad(n, e, 1) += coeffs(index, 2) * d;
-          grad(n, e, 2) += coeffs(index, 3) * d;
-        }
+          grad(n, e, dir) += coeffs(index, dir + 1) * d;
+          // grad(n, e, 1) += coeffs(index, 2) * d;
+          // grad(n, e, 2) += coeffs(index, 3) * d;
+        // }
       }
     };
-    Kokkos::parallel_for("calc grad", grid.node_to_cell.num_rows,
-                         calc_node_grad);
+    Kokkos::parallel_for("calc grad", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0, 0}, {num_nodes, N, 3}), calc_node_grad);
   }
 
   template <typename GetFieldValue>
   void calcGrad(GetFieldValue get_field_value,
                 const vul::Grid<vul::Device> &grid,
                 Kokkos::View<double *[3]> grad) const {
-    long num_stencils = grid.node_to_cell.num_rows;
-    for (int c = 0; c < num_stencils; c++) {
+    long num_nodes    = grid.node_to_cell.num_rows;
+    for (int c = 0; c < num_nodes; c++) {
       grad(c, 0) = 0.0;
       grad(c, 1) = 0.0;
       grad(c, 2) = 0.0;
@@ -121,8 +120,7 @@ public:
         grad(n, 2) += coeffs(index, 3) * d;
       }
     };
-    Kokkos::parallel_for("calc grad", grid.node_to_cell.num_rows,
-                         calc_node_grad);
+    Kokkos::parallel_for("calc grad", num_nodes, calc_node_grad);
   }
 
 };
