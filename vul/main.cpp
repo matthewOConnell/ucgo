@@ -80,6 +80,7 @@ void printLegalStatement() {
 
 int main(int num_args, const char *args[]) {
 
+{
   printLegalStatement();
 
   Kokkos::InitArguments arguments;
@@ -113,6 +114,9 @@ int main(int num_args, const char *args[]) {
   // So this "solve" method is just a wrapper to do everything
   solve(command_line_args);
 
+  printf("At Kokkos::finalize()\n"); fflush(stdout);
   Kokkos::finalize();
+  printf("Kokkos::finalize() done\n"); fflush(stdout);
+}
   return 0;
 }
