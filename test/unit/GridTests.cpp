@@ -210,8 +210,3 @@ TEST_CASE("Can construct device grid from host grid"){
   REQUIRE(hi.y <= 1.0);
   REQUIRE(hi.z <= 1.0);
 }
-
-TEST_CASE("Can create cell to node as compressed row storage"){
-  vul::Grid<vul::Host> grid(10, 10, 10);
-  auto grid_device = vul::Grid<vul::Device>(grid);
-}

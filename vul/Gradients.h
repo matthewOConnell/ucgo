@@ -5,7 +5,7 @@
 namespace vul {
 template <typename getPoint, typename getWeight, typename Point, typename Row>
 void setLSQWeights(getPoint get_neighbor_point, Row row,
-                   getWeight get_neighbor_weight, const Point &center_point, Kokkos::View<double*[4], vul::Host::space> coeffs_write, long write_offset) {
+                   getWeight get_neighbor_weight, const Point &center_point, Kokkos::View<double*[3], vul::Host::space> coeffs_write, long write_offset) {
   using Matrix = vul::DynamicMatrix<double>;
   Matrix A(row.size(), 4);
   for (int i = 0; i < row.size(); ++i) {
@@ -25,17 +25,17 @@ void setLSQWeights(getPoint get_neighbor_point, Row row,
   for (int i = 0; i < row.size(); ++i) {
     auto neighbor = row(i);
     auto w           = get_neighbor_weight(neighbor);
-    coeffs_write(write_offset + i, 0) = w * Ainv(0, i);
-    coeffs_write(write_offset + i, 1) = w * Ainv(1, i);
-    coeffs_write(write_offset + i, 2) = w * Ainv(2, i);
-    coeffs_write(write_offset + i, 3) = w * Ainv(3, i);
+    // coeffs_write(write_offset + i, 0) = w * Ainv(0, i);
+    coeffs_write(write_offset + i, 0) = w * Ainv(1, i);
+    coeffs_write(write_offset + i, 1) = w * Ainv(2, i);
+    coeffs_write(write_offset + i, 2) = w * Ainv(3, i);
   }
 }
 class LeastSquares {
 public:
   LeastSquares(const vul::Grid<vul::Host> &grid)
       : coeffs("lsq_coeffs", grid.node_to_cell.num_non_zero) {
-    auto coeffs_host =  Kokkos::View<double* [4], vul::Host::space>("lsq-host-coeffs", grid.node_to_cell.num_non_zero);
+    auto coeffs_host =  Kokkos::View<double* [3], vul::Host::space>("lsq-host-coeffs", grid.node_to_cell.num_non_zero);
     auto cell_centroids  = grid.cell_centroids;
     auto getCellCentroid = [&](int cell) {
       vul::Point<double> p;
@@ -63,7 +63,7 @@ public:
   }
 
 public:
-  Kokkos::View<double *[4], vul::Device::space> coeffs;
+  Kokkos::View<double *[3], vul::Device::space> coeffs;
 
   template <size_t N>
   void calcMultipleGrads(Kokkos::View<double*[N]> fields,
@@ -86,12 +86,8 @@ public:
       for(int i = 0; i < row.size(); i++){
         int index = row.row_index_start + i;
         long neighbor = row(i);
-        // for(int e = 0; e < N; e++) {
-          double d = fields(neighbor, e);
-          grad(n, e, dir) += coeffs(index, dir + 1) * d;
-          // grad(n, e, 1) += coeffs(index, 2) * d;
-          // grad(n, e, 2) += coeffs(index, 3) * d;
-        // }
+        double d      = fields(neighbor, e);
+        grad(n, e, dir) += coeffs(index, dir) * d;
       }
     };
     Kokkos::parallel_for("calc grad", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0, 0}, {num_nodes, N, 3}), calc_node_grad);
@@ -115,9 +111,9 @@ public:
         int index = row.row_index_start + i;
         long neighbor = row(i);
         double d = get_field_value(neighbor);
-        grad(n, 0) += coeffs(index, 1) * d;
-        grad(n, 1) += coeffs(index, 2) * d;
-        grad(n, 2) += coeffs(index, 3) * d;
+        grad(n, 0) += coeffs(index, 0) * d;
+        grad(n, 1) += coeffs(index, 1) * d;
+        grad(n, 2) += coeffs(index, 2) * d;
       }
     };
     Kokkos::parallel_for("calc grad", num_nodes, calc_node_grad);
