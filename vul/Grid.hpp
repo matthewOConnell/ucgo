@@ -7,7 +7,7 @@
 
 template <typename Space>
 template <typename OtherSpace>
-vul::Grid<Space>::Grid(const Grid<OtherSpace> &g) {
+void vul::Grid<Space>::deep_copy(const Grid<OtherSpace> &g) {
   points = PointVector<double>("points", g.points.extent(0));
   vul::force_copy(points, g.points);
   face_area = FaceArea("face_area", g.face_area.extent(0));

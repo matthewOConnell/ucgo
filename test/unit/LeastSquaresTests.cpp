@@ -8,13 +8,15 @@
 
 TEST_CASE("Least squares weight calculation") {
   auto grid_host = vul::Grid<vul::Host>(10, 10, 10);
-  auto grid      = vul::Grid<vul::Device>(grid_host);
-  vul::LeastSquares grad_calculator(grid);
+  vul::Grid<vul::Device> grid_device;
+  grid_device.deep_copy(grid_host);
+  // auto grid      = vul::Grid<vul::Device>(grid_host);
+  vul::LeastSquares grad_calculator(grid_host);
 
   Kokkos::View<double *[3], vul::Device::space> grad("test gradient",
-                                                     grid.numPoints());
+                                                     grid_host.numPoints());
 
-  auto centroids       = grid.cell_centroids;
+  auto centroids       = grid_host.cell_centroids;
   auto getCellCentroid = KOKKOS_LAMBDA(int cell) {
     vul::Point<double> p;
     p.x = centroids(cell, 0);
@@ -26,10 +28,10 @@ TEST_CASE("Least squares weight calculation") {
     auto p = getCellCentroid(c);
     return 3.8 * p.x + 4.5*p.y - 9.7*p.z;
   };
-  grad_calculator.calcGrad(get_field_at_cell, grid, grad);
+  grad_calculator.calcGrad(get_field_at_cell, grid_device, grad);
   auto grad_mirror = create_mirror(grad);
   vul::force_copy(grad_mirror, grad);
-  for (int n = 0; n < grid.numPoints(); n++) {
+  for (int n = 0; n < grid_host.numPoints(); n++) {
     REQUIRE(grad_mirror(n, 0) == Approx(3.8));
     REQUIRE(grad_mirror(n, 1) == Approx(4.5));
     REQUIRE(grad_mirror(n, 2) == Approx(-9.7));

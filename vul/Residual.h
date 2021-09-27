@@ -25,7 +25,7 @@
 namespace vul {
 template <size_t N, size_t NG> class Residual {
 public:
-  Residual(const Grid<vul::Device> *grid) : grid(grid) {}
+  Residual(const Grid<vul::Device> grid) : grid(grid) {}
 
   void calc(const SolutionArray<N, Device::space> &Q,
             const GradientArray<N, Device::space> & Q_grad,
@@ -33,27 +33,37 @@ public:
             const GradientArray<2, Device::space>& QG_grad,
             SolutionArray<N, Device::space> &R) {
 
-    int num_faces       = grid->face_to_cell.extent_int(0);
-    auto face_to_cell   = grid->face_to_cell;
-    auto face_areas     = grid->face_area;
-    auto do_calculation = KOKKOS_LAMBDA(int f) {
+    int num_faces       = grid.face_to_cell.extent_int(0);
+    auto face_to_cell   = grid.face_to_cell;
+    auto face_areas     = grid.face_area;
+    auto do_calculation = KOKKOS_CLASS_LAMBDA(int f) {
       int cell_l = face_to_cell(f, 0);
       int cell_r = face_to_cell(f, 1);
       StaticArray<N> ql, qr;
+      StaticArray<NG> qgl, qgr;
+
+      //--- second order extrapolation
+      auto cell_centroid_l = grid.getCellCentroid(cell_l);
+      auto cell_centroid_r = grid.getCellCentroid(cell_r);
+      auto face_centroid = grid.getFaceCentroid(f);
+      auto delta_l = face_centroid - cell_centroid_l;
+      auto delta_r = face_centroid - cell_centroid_r;
+
+      //-- unlimited 2nd order extrapolation
       for (int e = 0; e < N; e++) {
-        ql[e] = Q(cell_l, e);
+        ql[e] = Q(cell_l, e) + Q_grad(cell_l, e, 0) * delta_l.x + Q_grad(cell_l, e, 1)*delta_l.y + Q_grad(cell_l, e, 2) * delta_l.z;
       }
       for (int e = 0; e < N; e++) {
-        qr[e] = Q(cell_r, e);
+        qr[e] = Q(cell_r, e) + Q_grad(cell_r, e, 0) * delta_r.x + Q_grad(cell_r, e, 1)*delta_r.y + Q_grad(cell_r, e, 2) * delta_r.z;
       }
 
-      StaticArray<NG> qgl, qgr;
       for (int e = 0; e < NG; e++) {
-        qgl[e] = QG(cell_l, e);
+        qgl[e] = QG(cell_l, e) + QG_grad(cell_l, e, 0) * delta_l.x + QG_grad(cell_l, e, 1) * delta_l.y + QG_grad(cell_l, e, 2)* delta_l.z;
       }
       for (int e = 0; e < NG; e++) {
-        qgr[e] = QG(cell_r, e);
+        qgr[e] = QG(cell_r, e) + QG_grad(cell_r, e, 0) * delta_r.x + QG_grad(cell_r, e, 1) * delta_r.y + QG_grad(cell_r, e, 2)* delta_r.z;
       }
+
       Point<double> face_area;
       face_area.x = face_areas(f, 0);
       face_area.y = face_areas(f, 1);
@@ -72,6 +82,6 @@ public:
   }
 
 private:
-  const Grid<vul::Device> *grid;
+  const Grid<vul::Device> grid;
 };
 } // namespace vul

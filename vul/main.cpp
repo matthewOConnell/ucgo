@@ -42,8 +42,10 @@ void solve(const std::vector<std::string> &args) {
     grid = std::make_unique<vul::Grid<vul::Host>>(num_cells[0], num_cells[1], num_cells[2]);
   }
 
-  auto grid_device = std::make_unique<vul::Grid<vul::Device>>(*grid);
-  vul::Vulcan<5, 2> vulcan(*grid, *grid_device);
+  vul::Grid<vul::Device> grid_device;
+  grid_device.deep_copy(*grid);
+  // auto grid_device = std::make_unique<vul::Grid<vul::Device>>(*grid);
+  vul::Vulcan<5, 2> vulcan(*grid, grid_device);
   Kokkos::Profiling::popRegion();
   int num_iterations = 10;
   Kokkos::Profiling::pushRegion("solve");

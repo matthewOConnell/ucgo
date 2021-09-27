@@ -39,9 +39,11 @@ public:
   using FaceToNodes                       = Kokkos::View<int *[4], space>;
   using FaceArea                          = Kokkos::View<double *[3], space>;
 
+  Grid() = default;
   Grid(std::string filename);
   Grid(int ncells_x, int ncells_y, int ncells_z);
-  template <typename OtherSpace> Grid(const Grid<OtherSpace> &g);
+  // template <typename OtherSpace> Grid(const Grid<OtherSpace> &g);
+  template <typename OtherSpace> void deep_copy(const Grid<OtherSpace>& g);
 
   int count(CellType type) const;
   static int typeLength(CellType type);

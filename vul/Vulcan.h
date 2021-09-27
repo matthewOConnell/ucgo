@@ -30,10 +30,10 @@
 namespace vul {
 template <size_t NumEqns, size_t NumGasVars> class Vulcan {
 public:
-  Vulcan(const vul::Grid<vul::Host> &grid_host_i,
-         const vul::Grid<vul::Device> &grid_device_i)
+  Vulcan(const vul::Grid<vul::Host> grid_host_i,
+         const vul::Grid<vul::Device> grid_device_i)
       : grid_host(grid_host_i), grid_device(grid_device_i),
-        unweighted_least_squares(grid_host), residual(&grid_device),
+        unweighted_least_squares(grid_host), residual(grid_device),
         Q_device("solution", grid_host.numCells()),
         Q_host("solution", grid_host.numCells()),
         R("residual", grid_host.numCells()),

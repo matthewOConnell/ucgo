@@ -179,7 +179,8 @@ TEST_CASE("Can convert to inf ordering") {
 
 TEST_CASE("Can construct device grid from host grid"){
   vul::Grid<vul::Host> grid(10, 10, 10);
-  auto grid_device = vul::Grid<vul::Device>(grid);
+  vul::Grid<vul::Device> grid_device;
+  grid_device.deep_copy(grid);
 
   auto face_to_nodes = create_mirror(grid_device.face_to_nodes);
   vul::force_copy(face_to_nodes, grid_device.face_to_nodes);

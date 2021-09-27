@@ -6,9 +6,13 @@
 namespace vul {
 template <typename getPoint, typename getWeight, typename Point, typename Row>
 void setLSQWeights(getPoint get_neighbor_point, Row row,
+<<<<<<< HEAD
                    getWeight get_neighbor_weight, const Point &center_point,
                    Kokkos::View<double *[3], vul::Host::space> coeffs_write,
                    long write_offset) {
+=======
+                   getWeight get_neighbor_weight, const Point &center_point, Kokkos::View<double*[3], vul::Host::space> coeffs_write, long write_offset) {
+>>>>>>> l-value-copy
   using Matrix = vul::DynamicMatrix<double>;
   Matrix A(row.size(), 4);
   for (int i = 0; i < row.size(); ++i) {
@@ -29,7 +33,11 @@ void setLSQWeights(getPoint get_neighbor_point, Row row,
                  ") as rows" + std::to_string(row.size()));
   for (int i = 0; i < row.size(); ++i) {
     auto neighbor = row(i);
+<<<<<<< HEAD
     auto w        = get_neighbor_weight(neighbor);
+=======
+    auto w           = get_neighbor_weight(neighbor);
+>>>>>>> l-value-copy
     // coeffs_write(write_offset + i, 0) = w * Ainv(0, i);
     coeffs_write(write_offset + i, 0) = w * Ainv(1, i);
     coeffs_write(write_offset + i, 1) = w * Ainv(2, i);
@@ -39,9 +47,14 @@ void setLSQWeights(getPoint get_neighbor_point, Row row,
 class LeastSquares {
 public:
   LeastSquares(const vul::Grid<vul::Host> &grid)
+<<<<<<< HEAD
       : coeffs(NoInit("lsq_coeffs"), grid.node_to_cell.num_non_zero) {
     auto coeffs_host = Kokkos::View<double *[3], vul::Host::space>(
         NoInit("lsq-host-coeffs"), grid.node_to_cell.num_non_zero);
+=======
+      : coeffs("lsq_coeffs", grid.node_to_cell.num_non_zero) {
+    auto coeffs_host =  Kokkos::View<double* [3], vul::Host::space>("lsq-host-coeffs", grid.node_to_cell.num_non_zero);
+>>>>>>> l-value-copy
     auto cell_centroids  = grid.cell_centroids;
     auto getCellCentroid = [&](int cell) {
       vul::Point<double> p;
@@ -84,12 +97,12 @@ public:
     long num_nodes = grid.node_to_cell.num_rows;
     Kokkos::deep_copy(grad, 0.0);
 
-    auto n2c            = grid.node_to_cell;
+    auto n2c = grid.node_to_cell;
     auto calc_node_grad = KOKKOS_CLASS_LAMBDA(int n, int e, int dir) {
-      auto row = n2c(n);
-      for (int i = 0; i < row.size(); i++) {
-        int index     = row.row_index_start + i;
-        long neighbor = row(i);
+      auto start = n2c.rowStart(n);
+      auto end = n2c.rowEnd(n);
+      for(int index = start; index < end; index++){
+        long neighbor = n2c.cols(index);
         double d      = fields(neighbor, e);
         grad(n, e, dir) += coeffs(index, dir) * d;
       }
@@ -104,7 +117,7 @@ public:
   void calcGrad(GetFieldValue get_field_value,
                 const vul::Grid<vul::Device> &grid,
                 Kokkos::View<double *[3]> grad) const {
-    long num_nodes = grid.node_to_cell.num_rows;
+    long num_nodes    = grid.node_to_cell.num_rows;
     for (int c = 0; c < num_nodes; c++) {
       grad(c, 0) = 0.0;
       grad(c, 1) = 0.0;
