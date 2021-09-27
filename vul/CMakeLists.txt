@@ -1,6 +1,8 @@
 
 
 set(headers
+        CartBlock.h
+        Cell.h
         CompressedRowGraph.h
         Decompositions.h
         DynamicMatrix.h

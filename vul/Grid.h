@@ -19,6 +19,7 @@
 // language governing permissions and limitations under the License.
 
 #pragma once
+#include "Cell.h"
 #include "CompressedRowGraph.h"
 #include "Point.h"
 #include "Solution.h"
@@ -28,24 +29,6 @@
 #include <string>
 
 namespace vul {
-enum CellType { TRI, QUAD, TET, PYRAMID, PRISM, HEX, FACE };
-class Cell {
-public:
-  Cell(CellType type, const std::vector<int> &nodes);
-  Cell(CellType type, const int *nodes);
-  CellType type() const { return _type; }
-  int numNodes() const { return int(cell_nodes.size()); }
-  int node(int n) const { return cell_nodes[n]; }
-
-  int numFaces();
-
-  std::vector<int> face(int i) const;
-
-private:
-  CellType _type;
-  std::vector<int> cell_nodes;
-};
-
 template <typename Space> class Grid {
   using space = typename Space::space; // really confusing; I know...
 public:
