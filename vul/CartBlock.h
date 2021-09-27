@@ -1,6 +1,7 @@
 #pragma once
 #include "Point.h"
 #include "Macros.h"
+#include "Solution.h"
 
 class CartBlock {
 public:
@@ -12,31 +13,31 @@ public:
     dz = 1.0 / double(ncells_z);
   }
 
-  inline vul::Point<double> getPoint(int n) const {
+  vul::Point<double> getPoint(int n) const {
     int i, j, k;
     convertNodeIdTo_ijk(n, i, j, k);
     return vul::Point<double>{dx * i, dy * j, dz * k};
   }
 
-  inline void convertNodeIdTo_ijk(int node_id, int &i, int &j, int &k) const {
+  void convertNodeIdTo_ijk(int node_id, int &i, int &j, int &k) const {
     int nx = kx + 1;
     int ny = ky + 1;
     k      = node_id / (nx * ny);
     j      = (node_id - k * nx * ny) / nx;
     i      = node_id - k * nx * ny - j * nx;
   }
-  inline void convertCellIdTo_ijk(int cell_id, int &i, int &j, int &k) const {
+  void convertCellIdTo_ijk(int cell_id, int &i, int &j, int &k) const {
     k = cell_id / (kx * ky);
     j = (cell_id - k * kx * ky) / kx;
     i = cell_id - k * kx * ky - j * kx;
   }
-  inline int convert_ijk_ToNodeId(int i, int j, int k) const {
+  int convert_ijk_ToNodeId(int i, int j, int k) const {
     int nx = kx + 1;
     int ny = ky + 1;
     return i + j * nx + k * nx * ny;
   }
 
-  inline vul::StaticIntArray<8> getNodesInCell(int id) const {
+  vul::StaticIntArray<8> getNodesInCell(int id) const {
     int i, j, k;
     convertCellIdTo_ijk(id, i, j, k);
 

@@ -1,10 +1,9 @@
+#include "CartBlock.h"
 #include "Grid.h"
 #include "Point.h"
-#include "CartBlock.h"
 #include <set>
 
 #include "Macros.h"
-
 
 template <typename Space>
 template <typename OtherSpace>
@@ -314,17 +313,20 @@ vul::CellType vul::Grid<Space>::cellType(int cell_id) const {
 }
 
 template <typename Space> void vul::Grid<Space>::buildFaceNeighbors() {
+  Kokkos::Profiling::pushRegion("buildFaceNeighbors");
   std::vector<std::vector<int>> neighbors(numCells());
-  std::vector<int> cell;
-  for (int cell_id = 0; cell_id < numCells(); cell_id++) {
-    auto type = cellType(cell_id);
-    cell.resize(cellLength(cell_id));
-    getCell(cell_id, cell.data());
-    auto candidates    = getNodeNeighborsOfCell(cell, cell_id);
-    neighbors[cell_id] = getFaceNeighbors(type, cell, candidates);
-  }
+
+  Kokkos::parallel_for(
+      "buildFaceNeighbors", HostPolicy(0, numCells()), [&](int cell_id) {
+        auto type = cellType(cell_id);
+        std::vector<int> cell(cellLength(cell_id));
+        getCell(cell_id, cell.data());
+        auto candidates    = getNodeNeighborsOfCell(cell, cell_id);
+        neighbors[cell_id] = getFaceNeighbors(type, cell, candidates);
+      });
 
   cell_face_neighbors = CompressedRowGraph<vul::Host>(neighbors);
+  Kokkos::Profiling::popRegion();
 }
 
 template <typename Space> void vul::Grid<Space>::buildFaces() {
@@ -342,10 +344,10 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
     int num_faces = 6 * numHexs() + 5 * numPyramids() + 5 * numPrisms() +
                     4 * numTets() + numTris() + numQuads();
     num_faces /= 2;
-    face_to_cell   = FaceToCells("face_to_cell", num_faces);
-    face_to_nodes  = FaceToNodes("face_to_nodes", num_faces);
-    face_area      = FaceArea("face_area", num_faces);
-    face_centroids = PointVector<double>("face_centroids", num_faces);
+    face_to_cell   = FaceToCells(NoInit("face_to_cell"), num_faces);
+    face_to_nodes  = FaceToNodes(NoInit("face_to_nodes"), num_faces);
+    face_area      = FaceArea(NoInit("face_area"), num_faces);
+    face_centroids = PointVector<double>(NoInit("face_centroids"), num_faces);
   }
 
   int next_face = 0;
@@ -374,7 +376,7 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
         } else {
           face_to_nodes(next_face, 3) = -1; // quad
         }
-        auto centroid = calcFaceCentroid(cell.face(face_number));
+        auto centroid                = calcFaceCentroid(cell.face(face_number));
         face_centroids(next_face, 0) = centroid.x;
         face_centroids(next_face, 1) = centroid.y;
         face_centroids(next_face, 2) = centroid.z;
@@ -438,6 +440,7 @@ void vul::Grid<Space>::getCell(int cell_id, int *cell_nodes) const {
 }
 template <typename Space>
 std::vector<std::set<int>> vul::Grid<Space>::buildNodeToCell() {
+  Kokkos::Profiling::pushRegion("buildNodeToCell");
   std::vector<std::set<int>> n2c(numPoints());
   std::vector<int> cell_nodes;
   cell_nodes.reserve(8);
@@ -447,6 +450,7 @@ std::vector<std::set<int>> vul::Grid<Space>::buildNodeToCell() {
       n2c[n].insert(c);
     }
   }
+  Kokkos::Profiling::popRegion();
   return n2c;
 }
 template <typename Space> vul::Cell vul::Grid<Space>::cell(int cell_id) const {
@@ -568,19 +572,19 @@ vul::Grid<Space>::calcFaceCentroid(const std::vector<int> &face_nodes) const {
     VUL_ASSERT((std::is_same<Space, vul::Host>::value),
                "Cannot calcFaceArea using a device grid");
   }
-  Point<double> centroid = {0.0,0.0,0.0};
-  bool is_quad = face_nodes.size() == 4;
+  Point<double> centroid = {0.0, 0.0, 0.0};
+  bool is_quad           = face_nodes.size() == 4;
   for (int i = 0; i < 4; i++) {
     if (i == 3 and not is_quad)
       break; // break out for triangles;
-    int n = face_nodes[i];
-    auto p = getPoint(n);
+    int n    = face_nodes[i];
+    auto p   = getPoint(n);
     centroid = centroid + p;
   }
-  if(is_quad)
+  if (is_quad)
     centroid = centroid * 0.25;
   else
-    centroid = centroid * (1.0/3.0);
+    centroid = centroid * (1.0 / 3.0);
   return centroid;
 }
 template <typename Space> void vul::Grid<Space>::computeCellVolumes() {
@@ -861,7 +865,8 @@ vul::Point<double> vul::Grid<Space>::getCellCentroid(int i) {
   return p;
 }
 template <typename Space>
-KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int> vul::Grid<Space>::cellIdToTypeAndIndexPair(int cell_id) const {
+KOKKOS_FUNCTION Kokkos::pair<vul::CellType, int>
+vul::Grid<Space>::cellIdToTypeAndIndexPair(int cell_id) const {
   if (cell_id < numTets())
     return {TET, cell_id};
   cell_id -= numTets();
