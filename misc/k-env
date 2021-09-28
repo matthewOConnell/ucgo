@@ -1,0 +1,2 @@
+module purge
+module load cuda_11.2.2 gcc_9.2.0 cmake_3.18.0

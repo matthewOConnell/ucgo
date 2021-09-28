@@ -33,13 +33,13 @@ build_gpu() {
   cd ..
 }
 
-module purge
-module load cuda_11.2.2 gcc_9.2.0 cmake_3.18.0
-
-
 if [[ ! -d Kokkos ]]; then
   git clone https://github.com/kokkos/kokkos.git Kokkos
 fi
+
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+source $SCRIPT_DIR/k-env
 
 # build for host
 build_cpu "cpu_build"
