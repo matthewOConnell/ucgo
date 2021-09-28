@@ -138,7 +138,7 @@ public:
       }
     };
     Kokkos::parallel_for(
-        "calc grad",
+        "calc_grad_cell",
         Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0, 0, 0}, {num_cells, N, 3}),
         calc_node_grad);
   }
@@ -162,7 +162,7 @@ public:
       }
     };
     Kokkos::parallel_for(
-        "calc grad",
+        "calc_grad_node",
         Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0, 0, 0}, {num_nodes, N, 3}),
         calc_node_grad);
   }
