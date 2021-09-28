@@ -335,7 +335,12 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
                "Cannot build faces using a device grid");
   }
   Kokkos::Profiling::pushRegion("buildFaces");
-  node_to_cell = CompressedRowGraph<Space>(buildNodeToCell());
+  printf("Building node to cell adjacency:\n");
+  {
+    auto n2c_stl = buildNodeToCell();
+    auto c2n_stl = buildCellToNode(n2c_stl);
+    node_to_cell = CompressedRowGraph<Space>(n2c_stl);
+  }
   buildFaceNeighbors();
 
   {
@@ -437,6 +442,11 @@ void vul::Grid<Space>::getCell(int cell_id, int *cell_nodes) const {
                "Could not match cell type: " + std::to_string(cell_type));
   }
   }
+}
+template <typename Space>
+std::vector<std::set<int>>
+buildCellToNode(const std::vector<std::set<int>> &n2c) {
+  return {};
 }
 template <typename Space>
 std::vector<std::set<int>> vul::Grid<Space>::buildNodeToCell() {

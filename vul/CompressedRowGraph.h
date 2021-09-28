@@ -52,9 +52,12 @@ public:
   template <typename SubContainer>
   CompressedRowGraph(const std::vector<SubContainer> &graph) {
     num_non_zero = 0;
+    long max_row_length = 0;
     for (auto &row : graph) {
       num_non_zero += row.size();
+      max_row_length = std::max(max_row_length, long(row.size()));
     }
+    printf("Maximum num cols %d\n", max_row_length);
     num_rows = graph.size();
     rows     = Vec1D<int>("crs_ia", num_rows + 1);
     cols     = Vec1D<int>("crs_ja", num_non_zero);
