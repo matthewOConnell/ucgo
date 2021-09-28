@@ -2,7 +2,6 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <vector>
-#include <random>
 
 namespace vul {
 
@@ -77,13 +76,9 @@ public:
     rows     = Vec1D<int>("crs_ia", num_rows + 1);
     cols     = Vec1D<int>("crs_ja", num_non_zero);
 
-    auto rng = std::default_random_engine{};
-
     int next_ja = 0;
     for (long i = 0; i < long(graph.size()); i++) {
       rows(i + 1) = rows(i) + long(graph[i].size());
-      auto columns = std::vector<int>(graph[i].begin(), graph[i].end());
-      std::shuffle(std::begin(columns), std::end(columns), rng);
       for (int id : columns) {
         cols(next_ja++) = id;
       }
