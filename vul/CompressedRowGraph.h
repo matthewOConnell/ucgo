@@ -79,7 +79,7 @@ public:
     int next_ja = 0;
     for (long i = 0; i < long(graph.size()); i++) {
       rows(i + 1) = rows(i) + long(graph[i].size());
-      for (int id : columns) {
+      for (int id : graph[i]) {
         cols(next_ja++) = id;
       }
     }
