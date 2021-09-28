@@ -186,7 +186,7 @@ public:
       Kokkos::atomic_add(&grad(node, equation, dir),
                          coeffs_transpose(index, dir) * d);
     };
-    Kokkos::parallel_for("calc_grad_cell_flat",
+    Kokkos::parallel_for("calc_grad_flat",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
                              {0, 0, 0}, {num_non_zeros, N, 3}),
                          calc_node_grad);
