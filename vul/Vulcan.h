@@ -54,9 +54,9 @@ public:
     Kokkos::Profiling::popRegion();
 
     Kokkos::Profiling::pushRegion("calc-Grad-cell");
-    unweighted_least_squares.calcMultipleGrads<NumEqns>(Q_device, grid_device,
+    unweighted_least_squares.calcMultipleGrads_transpose<NumEqns>(Q_device, grid_device,
                                                         Q_grad_nodes);
-    unweighted_least_squares.calcMultipleGrads<NumGasVars>(
+    unweighted_least_squares.calcMultipleGrads_transpose<NumGasVars>(
         QG_device, grid_device, QG_grad_nodes);
     Kokkos::Profiling::popRegion();
 
