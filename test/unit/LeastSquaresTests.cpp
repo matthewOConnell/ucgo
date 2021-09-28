@@ -7,21 +7,10 @@
 
 TEST_CASE("Least squares grad calculation using transpose", "[only]"){
   auto grid_host = vul::Grid<vul::Host>(10, 10, 10);
-  printf("node to cell summary: \n");
-  grid_host.node_to_cell.printSummary();
-  printf("cell to node summary: \n");
-  grid_host.cell_to_node.printSummary();
 
   vul::Grid<vul::Device> grid_device;
   grid_device.deep_copy(grid_host);
-  // auto grid      = vul::Grid<vul::Device>(grid_host);
   vul::LeastSquares grad_calculator(grid_host);
-
-  printf("node to cell coeffs: \n");
-  grad_calculator.printSummary(grad_calculator.coeffs, grid_host.node_to_cell);
-
-  printf("cell to node coeffs: \n");
-  grad_calculator.printSummary(grad_calculator.coeffs_transpose, grid_host.cell_to_node);
 
   auto centroids       = grid_host.cell_centroids;
   Kokkos::View<double *[1], vul::Device::space> linear_field("linear field", grid_host.numCells());
@@ -35,7 +24,6 @@ TEST_CASE("Least squares grad calculation using transpose", "[only]"){
   Kokkos::View<double *[1][3], vul::Device::space> grad("test gradient",
                                                      grid_host.numPoints());
   grad_calculator.calcMultipleGrads_transpose<1>(linear_field, grid_device, grad);
-  // grad_calculator.calcMultipleGrads<1>(linear_field, grid_device, grad);
   auto grad_mirror = create_mirror(grad);
   vul::force_copy(grad_mirror, grad);
   for (int n = 0; n < grid_host.numPoints(); n++) {
