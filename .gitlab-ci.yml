@@ -43,7 +43,7 @@ K-build:
               pwd &&
               git clone ${CI_REPOSITORY_URL} ucgo &&
               cd ucgo && git checkout ${CI_COMMIT_SHA} && git status &&
-              ./misc/build_k.sh"
+              ./misc/build_k.sh && ./misc/test_k.sh"
 
 
 Cleanup-pipeline:
