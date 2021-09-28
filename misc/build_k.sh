@@ -9,6 +9,7 @@ build_cpu() {
   cd $build_dir
     cmake  \
              -DCMAKE_INSTALL_PREFIX=$PWD \
+             -DKokkos_ENABLE_OPENMP=ON \
              -DCMAKE_CXX_COMPILER=g++ \
              ..
     
@@ -25,6 +26,7 @@ build_gpu() {
              -DCMAKE_INSTALL_PREFIX=$PWD \
              -DCMAKE_CXX_COMPILER=${nvcc_wrapper} \
              -DKokkos_ENABLE_CUDA=ON \
+             -DKokkos_ENABLE_OPENMP=ON \
              -DKokkos_ARCH_VOLTA70=ON \
              ..
     
