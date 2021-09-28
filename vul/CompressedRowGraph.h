@@ -36,6 +36,20 @@ public:
     vul::force_copy(cols, g.cols);
   }
 
+  void printSummary() const {
+  auto first_few = std::min(long(3), num_rows);
+    for(int row = 0; row < first_few; row++){
+      auto start = rowStart(row);
+      auto end = rowEnd(row);
+      printf("Row %d: Cols: ", row);
+      for(int index = start; index < end; index++){
+        int column = cols(index);
+        printf(" %d", column);
+      }
+      printf("\n");
+    } 
+  }
+
   KOKKOS_FUNCTION Row operator()(int r) const {
     int size = rowEnd(r) - rowStart(r);
     return Row{r, size, rowStart(r), this};

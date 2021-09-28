@@ -39,7 +39,8 @@ void setLSQWeights(getPoint get_neighbor_point, Row row,
 class LeastSquares {
 public:
   LeastSquares(const vul::Grid<vul::Host> &grid)
-      : coeffs(NoInit("lsq_coeffs"), grid.node_to_cell.num_non_zero) {
+      : coeffs(NoInit("lsq_coeffs"), grid.node_to_cell.num_non_zero),
+      coeffs_transpose(NoInit("lsq_coeffs_transpose"), grid.cell_to_node.num_non_zero) {
     auto coeffs_host = Kokkos::View<double *[3], vul::Host::space>(
         NoInit("lsq-host-coeffs"), grid.node_to_cell.num_non_zero);
     auto cell_centroids  = grid.cell_centroids;
@@ -70,11 +71,77 @@ public:
                         grid.node_to_cell.rowStart(node));
         });
     Kokkos::Profiling::popRegion();
+    copyCoeffsToTranspose(grid, coeffs_host);
     vul::force_copy(coeffs, coeffs_host);
+
+  }
+
+  void copyCoeffsToTranspose(const vul::Grid<vul::Host>& grid_host, Kokkos::View<double*[3], vul::Host::space> coeffs_host) {
+
+    auto coeffs_transpose_host = Kokkos::View<double *[3], vul::Host::space>( NoInit("lsq-host-coeffs-transpose"), grid_host.cell_to_node.num_non_zero);
+    auto do_transpose = KOKKOS_LAMBDA(int node) {
+        auto n2c_start = grid_host.node_to_cell.rowStart(node);
+        auto n2c_end = grid_host.node_to_cell.rowEnd(node);
+        for(int n2c_index = n2c_start; n2c_index < n2c_end; n2c_index++){
+          int cell = grid_host.node_to_cell.cols(n2c_index);
+          auto c2n_start = grid_host.cell_to_node.rowStart(cell);
+          auto c2n_end = grid_host.cell_to_node.rowEnd(cell);
+          for(int c2n_index = c2n_start; c2n_index < c2n_end; c2n_index++){
+            int other_node = grid_host.cell_to_node.cols(c2n_index);
+            if(other_node == node){
+              coeffs_transpose_host(c2n_index, 0) = coeffs_host(n2c_index, 0);
+              coeffs_transpose_host(c2n_index, 1) = coeffs_host(n2c_index, 1);
+              coeffs_transpose_host(c2n_index, 2) = coeffs_host(n2c_index, 2);
+            }
+          }
+        }
+    };
+
+    Kokkos::parallel_for("lsq copy coeff transpose", HostPolicy(0, grid_host.numPoints()), do_transpose);
+    vul::force_copy(coeffs_transpose, coeffs_transpose_host);
+
   }
 
 public:
   Kokkos::View<double *[3], vul::Device::space> coeffs;
+  Kokkos::View<double *[3], vul::Device::space> coeffs_transpose;
+
+  void printSummary(Kokkos::View<double *[3]> coeffs_function, CompressedRowGraph<vul::Host>& graph) const {
+  auto first_few = std::min(long(3), graph.num_rows);
+    for(int row = 0; row < first_few; row++){
+      auto start = graph.rowStart(row);
+      auto end = graph.rowEnd(row);
+      printf("Row %d: Coeffs: ", row);
+      for(int index = start; index < end; index++){
+        printf(" %e", coeffs_function(index, 0));
+      }
+      printf("\n");
+    } 
+  }
+
+  template <size_t N>
+  void calcMultipleGrads_transpose(Kokkos::View<double *[N]> fields,
+                         const vul::Grid<vul::Device> &grid,
+                         Kokkos::View<double *[N][3]> grad) {
+
+    long num_cells = grid.cell_to_node.num_rows;
+    Kokkos::deep_copy(grad, 0.0);
+
+    auto c2n = grid.cell_to_node;
+    auto calc_node_grad = KOKKOS_CLASS_LAMBDA(int cell, int equation, int dir) {
+      auto start = c2n.rowStart(cell);
+      auto end = c2n.rowEnd(cell);
+      double d   = fields(cell, equation);
+      for(int index = start; index < end; index++){
+        long node = c2n.cols(index);
+        Kokkos::atomic_add(&grad(node, equation, dir), coeffs_transpose(index, dir)*d);
+      }
+    };
+    Kokkos::parallel_for(
+        "calc_grad_cell",
+        Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0, 0, 0}, {num_cells, N, 3}),
+        calc_node_grad);
+  }
 
   template <size_t N>
   void calcMultipleGrads(Kokkos::View<double *[N]> fields,
@@ -95,7 +162,7 @@ public:
       }
     };
     Kokkos::parallel_for(
-        "calc grad",
+        "calc_grad_node",
         Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0, 0, 0}, {num_nodes, N, 3}),
         calc_node_grad);
   }

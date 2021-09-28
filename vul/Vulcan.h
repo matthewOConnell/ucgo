@@ -46,10 +46,19 @@ public:
     setInitialConditions();
   }
   void calcGradients() {
+    Kokkos::Profiling::pushRegion("calc-Grad-node");
     unweighted_least_squares.calcMultipleGrads<NumEqns>(Q_device, grid_device,
                                                         Q_grad_nodes);
     unweighted_least_squares.calcMultipleGrads<NumGasVars>(
         QG_device, grid_device, QG_grad_nodes);
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("calc-Grad-cell");
+    unweighted_least_squares.calcMultipleGrads_transpose<NumEqns>(Q_device, grid_device,
+                                                        Q_grad_nodes);
+    unweighted_least_squares.calcMultipleGrads_transpose<NumGasVars>(
+        QG_device, grid_device, QG_grad_nodes);
+    Kokkos::Profiling::popRegion();
 
     averageNodeToFace<NumEqns, 3>(Q_grad_nodes, Q_grad_faces);
     averageNodeToFace<NumGasVars, 3>(QG_grad_nodes, QG_grad_faces);
@@ -58,7 +67,7 @@ public:
   template <size_t N, size_t D>
   void averageNodeToFace(Kokkos::View<double *[N][D]> field,
                          Kokkos::View<double *[N][D]> face_field) {
-    auto grid = grid_device;
+    auto grid    = grid_device;
     auto average = KOKKOS_LAMBDA(int f) {
       bool is_quad = grid.face_to_nodes(f, 3) != -1;
       for (int e = 0; e < N; e++) {
@@ -106,8 +115,8 @@ public:
   }
   void updateQ() const {
     auto dt_device = dt;
-    auto Q_d = Q_device;
-    auto R_d = R;
+    auto Q_d       = Q_device;
+    auto R_d       = R;
     auto update    = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
         Q_d(c, e) = Q_d(c, e) - dt_device * R_d(c, e);
@@ -168,9 +177,9 @@ public:
     Q_reference[3] = 0.000000;
     Q_reference[4] = 2.255499;
 
-    auto Q_ref    = Q_reference;
+    auto Q_ref = Q_reference;
 
-    auto Q_d = Q_device;
+    auto Q_d             = Q_device;
     auto update_boundary = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
         Q_d(c, e) = Q_ref[e];
@@ -185,8 +194,7 @@ public:
       for (int e = 0; e < NumEqns; e++) {
         Q_d(c, e) = Q_ref[e];
       }
-      Q_d(c, 1) =
-          1.1 * Q_ref[1]; // perturb first density to give non zero res
+      Q_d(c, 1) = 1.1 * Q_ref[1]; // perturb first density to give non zero res
     };
     Kokkos::parallel_for("set initial condition interior",
                          grid_host.numVolumeCells(), update_interior);
@@ -199,7 +207,7 @@ public:
     auto Q_ref = Q_reference; // make a local copy to be transferred to the GPU
     int boundary_cell_start = grid_host.boundaryCellsStart();
     int boundary_cell_end   = grid_host.boundaryCellsEnd();
-    auto Q_d = Q_device;
+    auto Q_d                = Q_device;
     auto set                = KOKKOS_LAMBDA(int c) {
       for (int e = 0; e < NumEqns; e++) {
         Q_d(c, e) = Q_ref[e];
@@ -227,15 +235,15 @@ public:
 
   void calcGasVariables() {
     auto QG_d = QG_device;
-    auto Q_d = Q_device;
-    auto calc      = KOKKOS_LAMBDA(int c) {
+    auto Q_d  = Q_device;
+    auto calc = KOKKOS_LAMBDA(int c) {
       QG_d(c, 0) = 1.4;
       StaticArray<NumEqns> q;
       for (int e = 0; e < NumEqns; e++) {
         q[e] = Q_d(c, e);
       }
-      double press    = perfect_gas::calcPressure(q, QG_d(c, 0));
-      QG_d(c, 1) = press;
+      double press = perfect_gas::calcPressure(q, QG_d(c, 0));
+      QG_d(c, 1)   = press;
     };
 
     Kokkos::parallel_for("calcGasVariables", grid_host.numCells(), calc);
