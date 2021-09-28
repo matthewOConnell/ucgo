@@ -99,11 +99,25 @@ public:
 
     Kokkos::parallel_for("lsq copy coeff transpose", HostPolicy(0, grid_host.numPoints()), do_transpose);
     vul::force_copy(coeffs_transpose, coeffs_transpose_host);
+
   }
 
 public:
   Kokkos::View<double *[3], vul::Device::space> coeffs;
   Kokkos::View<double *[3], vul::Device::space> coeffs_transpose;
+
+  void printSummary(Kokkos::View<double *[3]> coeffs_function, CompressedRowGraph<vul::Host>& graph) const {
+  auto first_few = std::min(long(3), graph.num_rows);
+    for(int row = 0; row < first_few; row++){
+      auto start = graph.rowStart(row);
+      auto end = graph.rowEnd(row);
+      printf("Row %d: Coeffs: ", row);
+      for(int index = start; index < end; index++){
+        printf(" %e", coeffs_function(index, 0));
+      }
+      printf("\n");
+    } 
+  }
 
   template <size_t N>
   void calcMultipleGrads_transpose(Kokkos::View<double *[N]> fields,
@@ -117,11 +131,10 @@ public:
     auto calc_node_grad = KOKKOS_CLASS_LAMBDA(int cell, int equation, int dir) {
       auto start = c2n.rowStart(cell);
       auto end = c2n.rowEnd(cell);
+      double d   = fields(cell, equation);
       for(int index = start; index < end; index++){
         long node = c2n.cols(index);
-        double d      = fields(cell, equation);
-        Kokkos::atomic_add(&grad(node, equation, dir), coeffs(index, dir)*d);
-        // grad(node, equation, dir) += coeffs(index, dir) * d;
+        Kokkos::atomic_add(&grad(node, equation, dir), coeffs_transpose(index, dir)*d);
       }
     };
     Kokkos::parallel_for(
