@@ -45,6 +45,7 @@ void vul::Grid<Space>::deep_copy(const Grid<OtherSpace> &g) {
 
   node_to_cell        = CompressedRowGraph<Space>(g.node_to_cell);
   cell_face_neighbors = CompressedRowGraph<Space>(g.cell_face_neighbors);
+  cell_to_node        = CompressedRowGraph<Space>(g.cell_to_node);
 }
 
 template <typename Space>
@@ -340,6 +341,7 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
     auto n2c_stl = buildNodeToCell();
     auto c2n_stl = buildCellToNode(n2c_stl);
     node_to_cell = CompressedRowGraph<Space>(n2c_stl);
+    cell_to_node = CompressedRowGraph<Space>(c2n_stl);
   }
   buildFaceNeighbors();
 
@@ -445,8 +447,14 @@ void vul::Grid<Space>::getCell(int cell_id, int *cell_nodes) const {
 }
 template <typename Space>
 std::vector<std::set<int>>
-buildCellToNode(const std::vector<std::set<int>> &n2c) {
-  return {};
+vul::Grid<Space>::buildCellToNode(const std::vector<std::set<int>> &n2c) {
+  std::vector<std::set<int>> c2n(numCells());
+  for (int node = 0; node < numPoints(); node++) {
+    for (auto cell : n2c[node]) {
+      c2n[cell].insert(node);
+    }
+  }
+  return c2n;
 }
 template <typename Space>
 std::vector<std::set<int>> vul::Grid<Space>::buildNodeToCell() {

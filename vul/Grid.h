@@ -110,6 +110,7 @@ public:
 
   CompressedRowGraph<Space> cell_face_neighbors;
   CompressedRowGraph<Space> node_to_cell;
+  CompressedRowGraph<Space> cell_to_node;
 
   void readPoints(FILE *fp);
   void readCells(FILE *fp);
