@@ -49,15 +49,16 @@ public:
     Kokkos::Profiling::pushRegion("calc-Grad-node");
     unweighted_least_squares.calcMultipleGrads<NumEqns>(Q_device, grid_device,
                                                         Q_grad_nodes);
-    unweighted_least_squares.calcMultipleGrads<NumGasVars>(
-        QG_device, grid_device, QG_grad_nodes);
     Kokkos::Profiling::popRegion();
 
     Kokkos::Profiling::pushRegion("calc-Grad-cell");
     unweighted_least_squares.calcMultipleGrads_transpose<NumEqns>(Q_device, grid_device,
                                                         Q_grad_nodes);
-    unweighted_least_squares.calcMultipleGrads_transpose<NumGasVars>(
-        QG_device, grid_device, QG_grad_nodes);
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("calc-Grad-flat");
+    unweighted_least_squares.calcMultipleGrads_flat<NumEqns>(Q_device, grid_device,
+                                                        Q_grad_nodes);
     Kokkos::Profiling::popRegion();
 
     averageNodeToFace<NumEqns, 3>(Q_grad_nodes, Q_grad_faces);
