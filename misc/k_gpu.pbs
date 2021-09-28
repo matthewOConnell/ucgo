@@ -1,0 +1,12 @@
+#PBS -S /bin/bash
+#PBS -N test-gpu
+#PBS -q K4-V100Sx2-PCI
+#PBS -l select=1:ncpus=16:ngpus=1
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -m n
+#PBS -V
+#
+cd $PBS_O_WORKDIR
+
+./gpu_build/vul/ucgo

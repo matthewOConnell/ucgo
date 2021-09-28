@@ -12,7 +12,7 @@ build_cpu() {
              -DCMAKE_CXX_COMPILER=g++ \
              ..
     
-    make -j4 install
+    make -j$(nproc) install
   cd ..
 }
 
@@ -25,10 +25,11 @@ build_gpu() {
              -DCMAKE_INSTALL_PREFIX=$PWD \
              -DCMAKE_CXX_COMPILER=${nvcc_wrapper} \
              -DKokkos_ENABLE_CUDA=ON \
+             -DKokkos_ENABLE_OPENMP=ON \
              -DKokkos_ARCH_VOLTA70=ON \
              ..
     
-    make -j4 install
+    make -j$(nproc) install
   cd ..
 }
 
