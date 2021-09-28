@@ -1,0 +1,31 @@
+#PBS -S /bin/bash
+#PBS -N test-gpu
+#PBS -q K4-V100Sx2-PCI
+#PBS -l select=1:ncpus=16:mpiprocs=16
+#PBS -l place=shared
+#PBS -l walltime=0:10:00
+#PBS -j oe
+#PBS -m n
+#PBS -V
+#
+set -o errexit  # exit on first error
+set -o pipefail # ensure exit with pipe
+set -o xtrace   # show commands invoked
+
+cd $PBS_O_WORKDIR
+
+# Setup bash module environment
+. /usr/local/pkgs/modules/init/bash
+source misc/k-env
+module list
+
+export OMP_NUM_THREADS=16
+
+./cpu_build/test/unit/UnitTests > test.log 2>&1
+
+#Not working, currently
+#./gpu_build/test/unit/UnitTests >> test.log 2>&1
+#
+./gpu_build/vul/ucgo >> test.log 2>&1
+
+echo "SUCCESS"
