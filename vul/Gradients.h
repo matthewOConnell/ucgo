@@ -179,7 +179,9 @@ public:
 
     auto c2n = grid.cell_to_node;
     auto calc_node_grad =
-        KOKKOS_CLASS_LAMBDA(long index, int equation) {
+        KOKKOS_CLASS_LAMBDA(int work_item) {
+          long index = work_item % num_non_zeros;
+          long equation = work_item / num_non_zeros;
       auto cell = cell_ids_in_crs_ordering(index);
       auto node = c2n.cols(index);
       double d  = fields(cell, equation);
@@ -188,10 +190,11 @@ public:
                          coeffs_transpose(index, dir) * d);
       }
     };
-    Kokkos::parallel_for("calc_grad_flat",
-                         Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-                             {0, 0}, {num_non_zeros, N}),
-                         calc_node_grad);
+    int num_work_items = num_non_zeros * N;
+    Kokkos::parallel_for("calc_grad_flat", num_work_items, calc_node_grad);
+                        //  Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+                        //      {0, 0}, {num_non_zeros, N}),
+                        //  calc_node_grad);
   }
 
   template <size_t N>
