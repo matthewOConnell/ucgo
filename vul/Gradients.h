@@ -186,8 +186,9 @@ public:
       auto node = c2n.cols(index);
       double d  = fields(cell, equation);
       for(int dir = 0; dir < 3; dir++){
-      Kokkos::atomic_add(&grad(node, equation, dir),
-                         coeffs_transpose(index, dir) * d);
+      grad(node, equation, dir) = coeffs_transpose(index, dir)* d;
+      // Kokkos::atomic_add(&grad(node, equation, dir),
+                        //  coeffs_transpose(index, dir) * d);
       }
     };
     int num_work_items = num_non_zeros * N;
