@@ -12,6 +12,8 @@ endif()
 if (NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/Kokkos)
   message(FATAL_ERROR "Kokkos missing from top-level.\nDownload Kokkos from Github, via `git clone https://github.com/kokkos/kokkos.git Kokkos`")
 endif()
+
+find_package(ddata QUIET)
 add_subdirectory(Kokkos)
 add_subdirectory(vul)
 add_subdirectory(test)
