@@ -179,16 +179,18 @@ public:
 
     auto c2n = grid.cell_to_node;
     auto calc_node_grad =
-        KOKKOS_CLASS_LAMBDA(long index, int equation, int dir) {
+        KOKKOS_CLASS_LAMBDA(long index, int equation) {
       auto cell = cell_ids_in_crs_ordering(index);
       auto node = c2n.cols(index);
       double d  = fields(cell, equation);
+      for(int dir = 0; dir < 3; dir++){
       Kokkos::atomic_add(&grad(node, equation, dir),
                          coeffs_transpose(index, dir) * d);
+      }
     };
     Kokkos::parallel_for("calc_grad_flat",
-                         Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
-                             {0, 0, 0}, {num_non_zeros, N, 3}),
+                         Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+                             {0, 0}, {num_non_zeros, N}),
                          calc_node_grad);
   }
 
