@@ -5,7 +5,7 @@
 #include <vul/Macros.h>
 #include <vul/Gradients.h>
 
-TEST_CASE("Least squares grad calculation using transpose", "[only]"){
+TEST_CASE("Least squares grad calculation using transpose"){
   auto grid_host = vul::Grid<vul::Host>(10, 10, 10);
 
   vul::Grid<vul::Device> grid_device;
@@ -24,6 +24,34 @@ TEST_CASE("Least squares grad calculation using transpose", "[only]"){
   Kokkos::View<double *[1][3], vul::Device::space> grad("test gradient",
                                                      grid_host.numPoints());
   grad_calculator.calcMultipleGrads_transpose<1>(linear_field, grid_device, grad);
+  auto grad_mirror = create_mirror(grad);
+  vul::force_copy(grad_mirror, grad);
+  for (int n = 0; n < grid_host.numPoints(); n++) {
+    REQUIRE(grad_mirror(n, 0, 0) == Approx(3.8));
+    REQUIRE(grad_mirror(n, 0, 1) == Approx(4.5));
+    REQUIRE(grad_mirror(n, 0, 2) == Approx(-9.7));
+  }
+}
+
+TEST_CASE("Least squares grad calculation using flat approach", "[flat]"){
+  auto grid_host = vul::Grid<vul::Host>(10, 10, 10);
+
+  vul::Grid<vul::Device> grid_device;
+  grid_device.deep_copy(grid_host);
+  vul::LeastSquares grad_calculator(grid_host);
+
+  auto centroids       = grid_host.cell_centroids;
+  Kokkos::View<double *[1], vul::Device::space> linear_field("linear field", grid_host.numCells());
+
+  auto set_function = KOKKOS_LAMBDA(int cell){
+    vul::Point<double> p{centroids(cell, 0), centroids(cell, 1), centroids(cell, 2)};
+    linear_field(cell, 0) = 3.8 * p.x + 4.5*p.y - 9.7*p.z;
+  };
+  Kokkos::parallel_for("set linear field",grid_host.numCells(), set_function);
+
+  Kokkos::View<double *[1][3], vul::Device::space> grad("test gradient",
+                                                     grid_host.numPoints());
+  grad_calculator.calcMultipleGrads_flat<1>(linear_field, grid_device, grad);
   auto grad_mirror = create_mirror(grad);
   vul::force_copy(grad_mirror, grad);
   for (int n = 0; n < grid_host.numPoints(); n++) {
