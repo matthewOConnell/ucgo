@@ -338,7 +338,6 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
   printf("Building node to cell adjacency:\n");
   {
     auto n2c_stl = buildNodeToCell();
-    auto c2n_stl = buildCellToNode(n2c_stl);
     node_to_cell = CompressedRowGraph<Space>(n2c_stl);
   }
   buildFaceNeighbors();
@@ -349,6 +348,7 @@ template <typename Space> void vul::Grid<Space>::buildFaces() {
     int num_faces = 6 * numHexs() + 5 * numPyramids() + 5 * numPrisms() +
                     4 * numTets() + numTris() + numQuads();
     num_faces /= 2;
+    printf("Num faces: %d\n", num_faces);
     face_to_cell   = FaceToCells(NoInit("face_to_cell"), num_faces);
     face_to_nodes  = FaceToNodes(NoInit("face_to_nodes"), num_faces);
     face_area      = FaceArea(NoInit("face_area"), num_faces);
@@ -442,11 +442,6 @@ void vul::Grid<Space>::getCell(int cell_id, int *cell_nodes) const {
                "Could not match cell type: " + std::to_string(cell_type));
   }
   }
-}
-template <typename Space>
-std::vector<std::set<int>>
-buildCellToNode(const std::vector<std::set<int>> &n2c) {
-  return {};
 }
 template <typename Space>
 std::vector<std::set<int>> vul::Grid<Space>::buildNodeToCell() {

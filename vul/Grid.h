@@ -119,7 +119,6 @@ public:
   void buildFaceNeighbors();
 
   std::vector<std::set<int>> buildNodeToCell();
-  std::vector<std::set<int>> buildCellToNode(const std::vector<std::set<int>>& n2c);
   std::vector<int> getNodeNeighborsOfCell(const std::vector<int> &cell_nodes,
                                           int cell_id);
   std::vector<int> getFaceNeighbors(CellType type,
